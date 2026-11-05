@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Mon compte - EduSchool{% endblock %}
+{% block page_title %}Etat des frais scolaires{% endblock %}
+
+{% block content %}
+{% for enfant in enfants %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-person me-2"></i>{{ enfant.profile.user.nom_complet }}</h5>
+        <div>
+            <span class="badge bg-info me-2">{{ enfant.enrollment.classe.nom }}</span>
+            {% if enfant.all_paid %}
+            <span class="badge bg-success">Tout paye</span>
+            {% else %}
+            <span class="badge bg-danger">Impaye</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if enfant.fee_items %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr><th>Type de frais</th><th>Montant du</th><th>Paye</th><th>Reste</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in enfant.fee_items %}
+                    <tr>
+                        <td class="fw-semibold">{{ item.fee.fee_type.nom }}</td>
+                        <td>{{ item.fee.montant|int|default(0)|string }} {{ item.fee.devise }}</td>
+                        <td class="text-success">{{ item.paye|int|default(0)|string }} {{ item.fee.devise }}</td>
+                        <td class="{% if item.reste > 0 %}text-danger fw-bold{% else %}text-success{% endif %}">{{ item.reste|int|default(0)|string }} {{ item.fee.devise }}</td>
+                        <td>
+                            {% if item.reste <= 0 %}
+                            <span class="badge bg-success">Paye</span>
+                            {% elif item.paye > 0 %}
+                            <span class="badge bg-warning">Partiel</span>
+                            {% else %}
+                            <span class="badge bg-danger">Impaye</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary fw-bold">
+                    {% for devise, t in enfant.totals_by_devise.items() %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-primary me-2">{{ devise }}</span> TOTAL
+                        </td>
+                        <td>{{ t.du|int|default(0)|string }} {{ devise }}</td>
+                        <td class="text-success">{{ t.paye|int|default(0)|string }} {{ devise }}</td>
+                        <td class="{% if t.reste > 0 %}text-danger{% else %}text-success{% endif %}">{{ t.reste|int|default(0)|string }} {{ devise }}</td>
+                        <td>
+                            <div class="progress" style="height:18px">
+                                <div class="progress-bar bg-success" style="width:{{ ((t.paye / t.du * 100)|default(0))|int if t.du > 0 else 100 }}%">
+                                    {{ ((t.paye / t.du * 100)|default(0))|int if t.du > 0 else 100 }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-3 text-muted">Aucun frais defini pour cette classe.</div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if enfants|length == 0 %}
+<div class="alert alert-info">Aucun enfant inscrit pour l'annee en cours.</div>
+{% endif %}
+{% endblock %}

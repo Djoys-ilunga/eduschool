@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Saisie des notes - EduSchool{% endblock %}
+{% block page_title %}Saisie des notes{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small">Classe</label>
+                <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Choisir --</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Matiere</label>
+                <select name="class_subject_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Choisir --</option>
+                    {% if cs_list %}
+                    {% for cs in cs_list %}
+                    <option value="{{ cs.id }}" {% if cs_id == cs.id %}selected{% endif %}>{{ cs.subject.nom }} (coef {{ cs.coefficient }})</option>
+                    {% endfor %}
+                    {% elif all_subjects %}
+                    {% for s in all_subjects %}
+                    <option value="" disabled>{{ s.nom }}</option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+                {% if not cs_list and all_subjects %}
+                <div class="form-text text-muted small">Selectionnez d'abord une classe pour voir les matieres filtrees.</div>
+                {% endif %}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">{{ div_label }}</label>
+                <select name="trimestre" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for t in range(1, nb_div + 1) %}
+                    <option value="{{ t }}" {% if trimestre == t %}selected{% endif %}>{{ t }}er {% if t != 1 %}{{ div_label }}{% else %}{{ div_label }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Recherche élève</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Nom de l'élève..." value="{{ q or '' }}">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+                {% if q %}<a href="{{ url_for('academic.list_grades', class_id=class_id, class_subject_id=cs_id, trimestre=trimestre, school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">Reset</a>{% endif %}
+            </div>
+            <input type="hidden" name="school_id" value="{{ school_id }}">
+        </form>
+    </div>
+</div>
+
+{% if class_id and cs_id %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">Ajouter une note</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('academic.add_grade', class_id=class_id, school_id=school_id) }}" novalidate>
+                    {{ form.hidden_tag() }}
+                    {{ form.class_subject_id(value=cs_id, type='hidden') }}
+
+                    <div class="mb-2">{{ form.student_profile_id.label(class="form-label small") }}{{ form.student_profile_id(class="form-select form-select-sm") }}</div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">{{ form.type_note.label(class="form-label small") }}{{ form.type_note(class="form-select form-select-sm") }}</div>
+                        <div class="col-6">{{ form.period_id.label(class="form-label small") }}{{ form.period_id(class="form-select form-select-sm" + (" is-invalid" if form.period_id.errors else "")) }}{% if form.period_id.errors %}<div class="invalid-feedback">{{ form.period_id.errors[0] }}</div>{% endif %}</div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            {{ form.valeur.label(class="form-label small") }}
+                            <div class="input-group input-group-sm">
+                                {{ form.valeur(class="form-control form-control-sm" + (" is-invalid" if form.valeur.errors else ""), placeholder="Ex: 14", id="grade-valeur") }}
+                                <span class="input-group-text" id="grade-indicator" style="min-width:40px;justify-content:center;">--</span>
+                                {% if form.valeur.errors %}<div class="invalid-feedback">{{ form.valeur.errors[0] }}</div>{% endif %}
+                            </div>
+                            <div class="form-text text-danger small d-none" id="grade-warning">La note ne peut pas depasser 20.</div>
+                        </div>
+                        <div class="col-6">{{ form.note_max.label(class="form-label small") }}{{ form.note_max(class="form-control form-control-sm", value="20") }}</div>
+                    </div>
+                    <div class="mb-2">{{ form.date_evaluation.label(class="form-label small") }}{{ form.date_evaluation(class="form-control form-control-sm", type="date") }}</div>
+                    <div class="mb-2">{{ form.commentaire.label(class="form-label small") }}{{ form.commentaire(class="form-control form-control-sm", rows="2") }}</div>
+                    {{ form.submit(class="btn btn-primary btn-sm w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">
+                {% if q %}{{ notes|length }} résultat(s) pour '{{ q }}'{% else %}{{ notes|length }} note{{ 's' if notes|length != 1 }}{% endif %}
+            </h6></div>
+            <div class="card-body p-0">
+                {% if notes %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Eleve</th><th>Type</th><th>Periode</th><th>Note</th><th>Date</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for n in notes %}
+                            <tr>
+                                <td>{{ n.student.nom_complet if n.student else '--' }}</td>
+                                <td><span class="badge bg-light text-dark">{{ n.type_note }}</span></td>
+                                <td><small>{{ n.period.nom if n.period else '--' }}</small></td>
+                                <td><strong>{{ n.valeur }}/{{ n.note_max|int }}</strong></td>
+                                <td><small>{{ n.date_evaluation.strftime('%d/%m') if n.date_evaluation else '--' }}</small></td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('academic.delete_grade', grade_id=n.id, trimestre=trimestre, school_id=school_id) }}" class="d-inline">
+                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">Aucune note saisie pour cette matiere et ce trimestre.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">Selectionnez une classe et une matiere pour commencer la saisie.</div>
+{% endif %}
+
+<script>
+(function() {
+    const input = document.getElementById('grade-valeur');
+    const indicator = document.getElementById('grade-indicator');
+    const warning = document.getElementById('grade-warning');
+    if (!input || !indicator) return;
+
+    function updateIndicator() {
+        const raw = input.value.trim().replace(',', '.');
+        const val = parseFloat(raw);
+        if (isNaN(val) || raw === '') {
+            indicator.textContent = '--';
+            indicator.className = 'input-group-text';
+            warning.classList.add('d-none');
+            return;
+        }
+        if (val > 20) {
+            indicator.textContent = '!';
+            indicator.className = 'input-group-text bg-danger text-white';
+            warning.classList.remove('d-none');
+            return;
+        }
+        warning.classList.add('d-none');
+        if (val >= 10) {
+            indicator.textContent = '✓';
+            indicator.className = 'input-group-text bg-success text-white';
+        } else {
+            indicator.textContent = '✗';
+            indicator.className = 'input-group-text bg-danger text-white';
+        }
+    }
+
+    input.addEventListener('input', updateIndicator);
+    input.addEventListener('change', updateIndicator);
+    // Run once on load in case of pre-filled value
+    updateIndicator();
+})();
+</script>
+{% endblock %}

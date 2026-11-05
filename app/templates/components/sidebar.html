@@ -1,0 +1,253 @@
+<aside class="sidebar bg-white border-end" style="position: fixed; top: 56px; left: 0; width: 260px; height: calc(100vh - 56px); overflow-y: auto; z-index: 1000;">
+    <nav class="p-3">
+        {% if current_user.role == 'super_admin' %}
+            <!-- MENU SUPER ADMIN -->
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Plateforme</h6>
+                <a href="{{ url_for('dashboard.super_admin') }}" class="sidebar-link">
+                    <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+                </a>
+                <a href="{{ url_for('schools.list') }}" class="sidebar-link">
+                    <i class="bi bi-buildings me-2"></i> Écoles
+                </a>
+                <a href="{{ url_for('schools.create') }}" class="sidebar-link">
+                    <i class="bi bi-plus-circle me-2"></i> Nouvelle école
+                </a>
+                <a href="{{ url_for('users.list') }}" class="sidebar-link">
+                    <i class="bi bi-people me-2"></i> Utilisateurs
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Academique</h6>
+                <a href="{{ url_for('students.list', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-mortarboard me-2"></i> Inscriptions
+                </a>
+                <a href="{{ url_for('academic.import_students', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-upload me-2"></i> Import Eleves
+                </a>
+                <a href="{{ url_for('academic.list_classes', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-diagram-3 me-2"></i> Classes
+                </a>
+                <a href="{{ url_for('academic.list_subjects', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-book me-2"></i> Matieres
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Finances</h6>
+                <a href="{{ url_for('finance.list_fee_types', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-credit-card me-2"></i> Types de frais
+                </a>
+                <a href="{{ url_for('finance.list_fees', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-cash-stack me-2"></i> Frais & Paiements
+                </a>
+                <a href="{{ url_for('finance.payment_tracking', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-clipboard-data me-2"></i> Suivi paiements
+                </a>
+            </div>
+            <div class="sidebar-section">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Communication</h6>
+                <a href="{{ url_for('communication.list_annonces', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-megaphone me-2"></i> Annonces
+                </a>
+            </div>
+            <div class="sidebar-section">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Système</h6>
+                <a href="{{ url_for('dashboard.history') }}" class="sidebar-link">
+                    <i class="bi bi-clock-history me-2"></i> Historique
+                </a>
+                <a href="{{ url_for('admin.audit_logs') }}" class="sidebar-link">
+                    <i class="bi bi-journal-text me-2"></i> Journal d'audit
+                </a>
+                <a href="{{ url_for('admin.backup_database') }}" class="sidebar-link">
+                    <i class="bi bi-download me-2"></i> Backup DB
+                </a>
+                <a href="{{ url_for('admin.restore_database') }}" class="sidebar-link">
+                    <i class="bi bi-upload me-2"></i> Restore DB
+                </a>
+                <a href="{{ url_for('academic.exports_center', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> Centre d'export
+                </a>
+                <a href="{{ url_for('students.archives', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-archive me-2"></i> Archives
+                </a>
+            </div>
+
+        {% elif current_user.role == 'school_admin' %}
+            <!-- MENU ADMIN ÉCOLE -->
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">École</h6>
+                <a href="{{ url_for('dashboard.school_admin') }}" class="sidebar-link">
+                    <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+                </a>
+                <a href="{{ url_for('users.list') }}" class="sidebar-link">
+                    <i class="bi bi-people me-2"></i> Utilisateurs
+                </a>
+                <a href="{{ url_for('students.list', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-mortarboard me-2"></i> Inscriptions
+                </a>
+                <a href="{{ url_for('academic.import_students', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-upload me-2"></i> Import Eleves
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Académique</h6>
+                <a href="{{ url_for('academic.list_years', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-calendar3 me-2"></i> Années scolaires
+                </a>
+                <a href="{{ url_for('academic.list_classes', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-diagram-3 me-2"></i> Classes
+                </a>
+                <a href="{{ url_for('academic.list_subjects', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-book me-2"></i> Matières
+                </a>
+                <a href="{{ url_for('academic.manage_periods', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-sliders me-2"></i> Parametrage periodes
+                </a>
+                <a href="{{ url_for('academic.list_attendance', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Absences & Retards
+                </a>
+                <a href="{{ url_for('academic.deliberation_list', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-clipboard-check me-2"></i> Conseil de classe
+                </a>
+                <div class="sidebar-submenu">
+                    <a href="{{ url_for('academic.exports_center', school_id=current_user.school_id) }}" class="sidebar-link">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i> Centre d'export
+                    </a>
+                </div>
+                <a href="{{ url_for('academic.view_timetable', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-calendar-week me-2"></i> Emploi du temps
+                </a>
+                <a href="{{ url_for('academic.devoirs_list') }}" class="sidebar-link">
+                    <i class="bi bi-pencil-square me-2"></i> Devoirs
+                </a>
+                <a href="{{ url_for('academic.bulletin_list', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-journal-check me-2"></i> Notes & Bulletins
+                </a>
+                <a href="{{ url_for('academic.bulletins', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-file-earmark-text me-2"></i> Bulletins
+                </a>
+                <a href="{{ url_for('dashboard.history') }}" class="sidebar-link">
+                    <i class="bi bi-clock-history me-2"></i> Historique
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Communication</h6>
+                <a href="{{ url_for('communication.list_annonces', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-megaphone me-2"></i> Annonces
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Finance</h6>
+                <a href="{{ url_for('finance.list_fee_types', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-wallet2 me-2"></i> Types de frais
+                </a>
+                <a href="{{ url_for('finance.list_fees', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-receipt me-2"></i> Frais & Paiements
+                </a>
+                <a href="{{ url_for('finance.payment_tracking', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-clipboard-data me-2"></i> Suivi paiements
+                </a>
+            </div>
+            <div class="sidebar-section mb-3">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Archives</h6>
+                <a href="{{ url_for('students.archives', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-archive me-2"></i> Dossiers élèves
+                </a>
+            </div>
+
+        {% elif current_user.role == 'teacher' %}
+            <div class="sidebar-section">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Enseignant</h6>
+                <a href="{{ url_for('dashboard.teacher') }}" class="sidebar-link">
+                    <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+                </a>
+                <a href="{{ url_for('academic.my_classes', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-easel me-2"></i> Mes classes
+                </a>
+                <a href="{{ url_for('academic.list_grades', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-pencil-square me-2"></i> Saisie des notes
+                </a>
+                <a href="{{ url_for('academic.devoirs_list') }}" class="sidebar-link">
+                    <i class="bi bi-pencil-square me-2"></i> Devoirs
+                </a>
+                <a href="{{ url_for('academic.view_timetable', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-calendar3 me-2"></i> Emploi du temps
+                </a>
+                <a href="{{ url_for('academic.list_attendance', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Absences & Retards
+                </a>
+                <a href="{{ url_for('academic.exports_center', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> Centre d'export
+                </a>
+                <a href="{{ url_for('communication.list_annonces', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-megaphone me-2"></i> Annonces
+                </a>
+                <a href="{{ url_for('students.archives', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-archive me-2"></i> Archives
+                </a>
+            </div>
+
+        {% elif current_user.role == 'parent' %}
+            <div class="sidebar-section">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Parent</h6>
+                <a href="{{ url_for('dashboard.parent') }}" class="sidebar-link">
+                    <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+                </a>
+                <a href="{{ url_for('dashboard.mes_enfants') }}" class="sidebar-link">
+                    <i class="bi bi-people me-2"></i> Mes enfants
+                </a>
+                <a href="{{ url_for('dashboard.devoirs_enfants') }}" class="sidebar-link">
+                    <i class="bi bi-pencil-square me-2"></i> Devoirs enfants
+                </a>
+                <a href="{{ url_for('academic.parent_attendance') }}" class="sidebar-link">
+                    <i class="bi bi-calendar-x me-2"></i> Absences & Retards
+                </a>
+                <a href="{{ url_for('academic.releve', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-journal-text me-2"></i> Notes
+                </a>
+                <a href="{{ url_for('academic.bulletins_parent') }}" class="sidebar-link">
+                    <i class="bi bi-file-earmark-text me-2"></i> Bulletins enfants
+                </a>
+                <a href="{{ url_for('communication.list_annonces', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-megaphone me-2"></i> Annonces
+                </a>
+                <a href="{{ url_for('finance.parent_account') }}" class="sidebar-link">
+                    <i class="bi bi-wallet2 me-2"></i> Mon compte
+                </a>
+                <a href="{{ url_for('students.archives', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-archive me-2"></i> Archives
+                </a>
+            </div>
+
+        {% else %}
+            <!-- ÉLÈVE — miroir du menu parent -->
+            <div class="sidebar-section">
+                <h6 class="text-muted text-uppercase small fw-bold px-2">Élève</h6>
+                <a href="{{ url_for('dashboard.student') }}" class="sidebar-link">
+                    <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+                </a>
+                <a href="{{ url_for('dashboard.ma_fiche') }}" class="sidebar-link">
+                    <i class="bi bi-person me-2"></i> Ma fiche
+                </a>
+                <a href="{{ url_for('academic.releve', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-journal-text me-2"></i> Mes notes
+                </a>
+                <a href="{{ url_for('academic.mes_bulletins') }}" class="sidebar-link">
+                    <i class="bi bi-file-earmark-text me-2"></i> Mes bulletins
+                </a>
+                <a href="{{ url_for('students.devoirs_eleve') }}" class="sidebar-link">
+                    <i class="bi bi-journal-check me-2"></i> Mes devoirs
+                </a>
+                <a href="{{ url_for('academic.view_timetable', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-calendar3 me-2"></i> Emploi du temps
+                </a>
+                <a href="{{ url_for('communication.list_annonces', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-megaphone me-2"></i> Annonces
+                </a>
+                <a href="{{ url_for('students.archives', school_id=current_user.school_id) }}" class="sidebar-link">
+                    <i class="bi bi-archive me-2"></i> Archives
+                </a>
+            </div>
+        {% endif %}
+    </nav>
+</aside>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Bulletins - EduSchool{% endblock %}
+{% block page_title %}Bulletins & Deliberations{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% for data in classes_data %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ data.classe.nom }}</h5>
+                <p class="card-text text-muted">{{ data.nb_eleves }} eleve{{ 's' if data.nb_eleves != 1 }}</p>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for t in [1,2,3] %}
+                    <a href="{{ url_for('academic.bulletin_class', class_id=data.classe.id, trimestre=t, school_id=school_id) }}"
+                       class="btn btn-sm btn-outline-primary">
+                        {{ t }}e{% if t==1 %}r{% endif %} Trim.
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

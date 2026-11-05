@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Écoles - EduSchool{% endblock %}
+{% block page_title %}Liste des écoles{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small">Recherche</label>
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Nom, code, ville..."
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Statut</label>
+                <select name="statut" class="form-select form-select-sm">
+                    <option value="">Tous</option>
+                    <option value="active" {% if filtre_statut == 'active' %}selected{% endif %}>Actives</option>
+                    <option value="suspendue" {% if filtre_statut == 'suspendue' %}selected{% endif %}>Suspendues</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Plan</label>
+                <select name="plan_id" class="form-select form-select-sm">
+                    <option value="">Tous</option>
+                    {% for plan in plans %}
+                    <option value="{{ plan.id }}" {% if filtre_plan == plan.id %}selected{% endif %}>
+                        {{ plan.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+                <a href="{{ url_for('schools.list') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tableau -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            {{ pagination.total }} école{{ 's' if pagination.total != 1 }}
+        </h5>
+        <a href="{{ url_for('schools.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nouvelle école
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if ecoles %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Code</th>
+                        <th>Ville / Pays</th>
+                        <th>Plan</th>
+                        <th>Élèves</th>
+                        <th>Statut</th>
+                        <th>Créée le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ecole in ecoles %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('schools.detail', school_id=ecole.id) }}" class="text-decoration-none fw-semibold">
+                                {{ ecole.nom }}
+                            </a>
+                        </td>
+                        <td><code>{{ ecole.code }}</code></td>
+                        <td>{{ ecole.ville or '-' }}, {{ ecole.pays }}</td>
+                        <td>
+                            {% if ecole.plan %}
+                            <span class="badge bg-info">{{ ecole.plan.nom }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Aucun</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ ecole.nombre_eleves }}</td>
+                        <td>
+                            {% if ecole.statut == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                            {% elif ecole.statut == 'suspendue' %}
+                            <span class="badge bg-danger">Suspendue</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ ecole.statut }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ ecole.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('schools.detail', school_id=ecole.id) }}"
+                                   class="btn btn-outline-primary" title="Détails">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('schools.edit', school_id=ecole.id) }}"
+                                   class="btn btn-outline-secondary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-buildings display-3 d-block mb-3"></i>
+            <p>Aucune école trouvée.</p>
+            <a href="{{ url_for('schools.create') }}" class="btn btn-primary">Créer la première école</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                    <a class="page-link"
+                       href="{{ url_for('schools.list', page=pagination.prev_num, search=search, statut=filtre_statut, plan_id=filtre_plan) if pagination.has_prev else '#' }}">
+                        ← Précédent
+                    </a>
+                </li>
+                {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if p %}
+                    <li class="page-item {{ 'active' if p == pagination.page }}">
+                        <a class="page-link"
+                           href="{{ url_for('schools.list', page=p, search=search, statut=filtre_statut, plan_id=filtre_plan) }}">
+                            {{ p }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                    <a class="page-link"
+                       href="{{ url_for('schools.list', page=pagination.next_num, search=search, statut=filtre_statut, plan_id=filtre_plan) if pagination.has_next else '#' }}">
+                        Suivant →
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

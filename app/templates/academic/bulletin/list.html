@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Bulletins - EduSchool{% endblock %}
+{% block page_title %}Bulletins &bullet; {{ annee.nom }}{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary small mb-3">
+    <strong>Ecole :</strong> {{ school.nom }} &mdash;
+    <strong>Cycle :</strong> {{ school.cycle }} &mdash;
+    <strong>{{ school.nb_divisions }} {{ div_label|lower }}s</strong>
+</div>
+
+{% for d in divisions %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ school.division_label }} {{ d.numero }} — {{ d.nom }}</h5>
+        <span class="badge bg-light text-dark">{{ d.periodes|length }} periode{{ 's' if d.periodes|length != 1 }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Bulletin complet du trimestre/semestre -->
+            <div class="col-md-4">
+                <div class="card border-primary h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-trophy display-4 text-primary"></i>
+                        <h6 class="mt-2">Bulletin {{ div_label|lower }}</h6>
+                        <p class="small text-muted">{{ d.nom }}<br>{{ d.date_debut.strftime('%d/%m/%Y') }} → {{ d.date_fin.strftime('%d/%m/%Y') }}</p>
+                        <a href="{{ url_for('academic.bulletin_trimester', trimester_id=d.id, school_id=school_id) }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye me-1"></i> Voir
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulletins par periode -->
+            {% for p in d.periodes %}
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-file-earmark-text display-4 text-secondary"></i>
+                        <h6 class="mt-2">{{ p.nom }}</h6>
+                        <p class="small text-muted">
+                            Coef: {{ p.coefficient }}<br>
+                            {{ p.date_debut.strftime('%d/%m/%Y') }} → {{ p.date_fin.strftime('%d/%m/%Y') }}
+                        </p>
+                        <a href="{{ url_for('academic.bulletin_period', period_id=p.id, school_id=school_id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye me-1"></i> Bulletin
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if not divisions %}
+<div class="alert alert-info">Aucun {{ div_label|lower }} trouve.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Parent - EduSchool{% endblock %}
+{% block page_title %}Tableau de bord — Parent{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-primary mb-0">{{ nb_enfants }}</h1>
+                <small class="text-muted">Enfant{{ 's' if nb_enfants != 1 }} inscrit{{ 's' if nb_enfants != 1 }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-success mb-0">
+                    {% set total = namespace(v=0) %}
+                    {% for e in enfants_data %}{% if e.enrollment %}{% set total.v = total.v + 1 %}{% endif %}{% endfor %}
+                    {{ total.v }}
+                </h1>
+                <small class="text-muted">En classe</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-info mb-0">
+                    {% set schools = [] %}
+                    {% for e in enfants_data %}{% if e.profile.user.school not in schools %}{{ schools.append(e.profile.user.school) or '' }}{% endif %}{% endfor %}
+                    {{ schools|length }}
+                </h1>
+                <small class="text-muted">Ecole{{ 's' if schools|length != 1 }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if enfants_data %}
+<div class="row">
+    {% for enfant in enfants_data %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-person me-1"></i>
+                    {{ enfant.profile.user.nom_complet }}
+                </h6>
+                <span class="badge bg-light text-dark">{{ enfant.lien.relation or 'Parent' }}</span>
+            </div>
+            <div class="card-body">
+                <dl class="row small mb-2">
+                    <dt class="col-sm-4">Matricule</dt>
+                    <dd class="col-sm-8"><code>{{ enfant.profile.matricule or '--' }}</code></dd>
+                    <dt class="col-sm-4">Ecole</dt>
+                    <dd class="col-sm-8">{{ enfant.profile.user.school.nom if enfant.profile.user.school else '--' }}</dd>
+                    {% if enfant.enrollment %}
+                    <dt class="col-sm-4">Classe</dt>
+                    <dd class="col-sm-8"><span class="badge bg-info">{{ enfant.enrollment.classe.nom }}</span></dd>
+                    <dt class="col-sm-4">Annee</dt>
+                    <dd class="col-sm-8">{{ enfant.enrollment.annee_scolaire.nom }}</dd>
+                    {% else %}
+                    <dt class="col-sm-4">Statut</dt>
+                    <dd class="col-sm-8"><span class="badge bg-warning">Non inscrit</span></dd>
+                    {% endif %}
+                </dl>
+                <div class="d-grid gap-1">
+                    <a href="{{ url_for('students.detail', profile_id=enfant.profile.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person me-1"></i> Fiche eleve
+                    </a>
+                    {% if enfant.enrollment %}
+                    <a href="{{ url_for('dashboard.devoirs_enfants') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-journal-check me-1"></i> Resultats Devoirs
+                    </a>
+                    <a href="{{ url_for('academic.releve', profile_id=enfant.profile.id, school_id=current_user.school_id) }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-journal-text me-1"></i> Voir les notes
+                    </a>
+                    <a href="{{ url_for('academic.parent_attendance') }}" class="btn btn-outline-warning btn-sm">
+                        <i class="bi bi-calendar-x me-1"></i> Absences & Retards
+                    </a>
+                    <a href="{{ url_for('students.attestation', profile_id=enfant.profile.id) }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Attestation scolaire
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Aucun enfant n'est associe a votre compte. Contactez l'administration de l'ecole.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Paiements - EduSchool{% endblock %}
+{% block page_title %}Paiements{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <form method="GET" class="row g-2">
+        <div class="col-auto"><select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Toutes les classes</option>{% for c in classes %}<option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+        </select></div>
+        <input type="hidden" name="school_id" value="{{ school_id }}">
+    </form>
+    <a href="{{ url_for('finance.create_payment', school_id=school_id) }}" class="btn btn-primary btn-sm"><i class="bi bi-cash me-1"></i> Nouveau paiement</a>
+</div>
+<div class="card"><div class="card-body p-0">
+    {% if payments %}
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0"><thead class="table-light"><tr><th>Date</th><th>Eleve</th><th>Frais</th><th>Montant</th><th>Mode</th><th>Statut</th><th class="text-center">Reçu</th></tr></thead>
+        <tbody>
+            {% for p in payments %}
+            {% set statut, cls = p.statut_label %}
+            <tr>
+                <td><small>{{ p.date_paiement.strftime('%d/%m/%Y') }}</small></td>
+                <td>{{ p.student_profile.user.nom_complet if p.student_profile else '--' }}</td>
+                <td><small>{{ p.fee.fee_type.nom if p.fee else '--' }}</small></td>
+                <td><strong>{{ p.montant_paye|int|default(0)|string }} {{ p.fee.devise if p.fee else '' }}</strong></td>
+                <td><span class="badge bg-light text-dark">{{ p.mode_paiement }}</span></td>
+                <td><span class="badge bg-{{ cls }}">{{ statut }}</span></td>
+                <td class="text-center">
+                    <a href="{{ url_for('finance.payment_receipt', payment_id=p.id) }}"
+                       class="btn btn-outline-secondary btn-sm" title="Télécharger le reçu PDF">
+                        <i class="bi bi-receipt"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody></table>
+    </div>
+    {% else %}<div class="text-center py-4 text-muted">Aucun paiement enregistre.</div>{% endif %}
+</div></div>
+{% endblock %}

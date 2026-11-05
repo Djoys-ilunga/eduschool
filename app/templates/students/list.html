@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Eleves - EduSchool{% endblock %}
+{% block page_title %}Eleves{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small">Recherche</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Nom, matricule..." value="{{ q or '' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Annee</label>
+                <select name="year_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Toutes les annees</option>
+                    {% for y in years %}
+                    <option value="{{ y.id }}" {% if year_id == y.id %}selected{% endif %}>
+                        {{ y.nom }} {% if y.statut == 'active' %}(Active){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Classe <span class="text-muted">({{ classes|length }})</span></label>
+                <select name="class_id" class="form-select form-select-sm">
+                    <option value="">Toutes les classes</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+                <a href="{{ url_for('students.list', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+        
+        <!-- Filtre par statut (nouveau / continuité) -->
+        <div class="mt-2">
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ url_for('students.list', school_id=school_id, year_id=year_id, class_id=class_id, q=q, statut='all') }}" 
+                   class="btn {{ 'btn-primary' if statut_filter == 'all' else 'btn-outline-primary' }}">
+                    <i class="bi bi-people me-1"></i> Tous
+                </a>
+                <a href="{{ url_for('students.list', school_id=school_id, year_id=year_id, class_id=class_id, q=q, statut='nouveau') }}"
+                   class="btn {{ 'btn-success' if statut_filter == 'nouveau' else 'btn-outline-success' }}">
+                    <i class="bi bi-person-plus me-1"></i> Nouveaux
+                </a>
+                <a href="{{ url_for('students.list', school_id=school_id, year_id=year_id, class_id=class_id, q=q, statut='continuite') }}"
+                   class="btn {{ 'btn-info' if statut_filter == 'continuite' else 'btn-outline-info' }}">
+                    <i class="bi bi-arrow-repeat me-1"></i> Continuité
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            {% if q %}{{ pagination.total }} résultat(s) pour '{{ q }}'{% else %}{{ pagination.total }} eleve{{ 's' if pagination.total != 1 }}{% endif %}
+        </h5>
+        <a href="{{ url_for('students.create', school_id=school_id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Inscrire un eleve
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Nom</th>
+                        <th>Sexe</th>
+                        <th>Classe</th>
+                        <th>Annee</th>
+                        <th>Parents</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in students %}
+                    {% set enroll = p.inscriptions|selectattr('statut', 'equalto', 'actif')|first %}
+                    <tr>
+                        <td><code>{{ p.matricule or '--' }}</code></td>
+                        <td>
+                            <a href="{{ url_for('students.detail', profile_id=p.id) }}" class="text-decoration-none fw-semibold">
+                                {{ p.user.nom_complet }}
+                            </a>
+                        </td>
+                        <td>{{ p.sexe or '--' }}</td>
+                        <td>
+                            {% if enroll %}<span class="badge bg-info">{{ enroll.classe.nom }}</span>{% else %}--{% endif %}
+                        </td>
+                        <td>
+                            {% if enroll %}<small>{{ enroll.annee_scolaire.nom }}</small>{% else %}--{% endif %}
+                        </td>
+                        <td><small>{{ p.parents|length }}</small></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('students.detail', profile_id=p.id) }}" class="btn btn-outline-primary" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('students.edit', profile_id=p.id) }}" class="btn btn-outline-secondary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('students.delete', profile_id=p.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger"
+                                            data-confirm="Supprimer l'eleve {{ p.user.nom_complet }} ?"
+                                            title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-mortarboard display-3 d-block mb-3"></i>
+            <p>Aucun eleve trouve.</p>
+            <a href="{{ url_for('students.create', school_id=school_id) }}" class="btn btn-primary">Inscrire le premier eleve</a>
+        </div>
+        {% endif %}
+    </div>
+    {% if pagination.pages > 1 %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                    <a class="page-link" href="{{ url_for('students.list', page=pagination.prev_num, q=q, class_id=class_id, year_id=year_id, school_id=school_id) if pagination.has_prev else '#' }}">-</a>
+                </li>
+                {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if p %}<li class="page-item {{ 'active' if p == pagination.page }}"><a class="page-link" href="{{ url_for('students.list', page=p, q=q, class_id=class_id, year_id=year_id, school_id=school_id) }}">{{ p }}</a></li>
+                    {% else %}<li class="page-item disabled"><span class="page-link">..</span></li>{% endif %}
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                    <a class="page-link" href="{{ url_for('students.list', page=pagination.next_num, q=q, class_id=class_id, year_id=year_id, school_id=school_id) if pagination.has_next else '#' }}">-</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

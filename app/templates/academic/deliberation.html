@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}Conseil de Classe - EduSchool{% endblock %}
+{% block page_title %}Conseil de Classe — {{ classe.nom }} — {{ trimester.nom }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .decision-select { min-width: 160px; }
+    .decision-passe { background-color: #d4edda !important; }
+    .decision-redouble { background-color: #f8d7da !important; }
+    .decision-avertissement { background-color: #fff3cd !important; }
+    .decision-encouragement { background-color: #cce5ff !important; }
+    .decision-felicitations { background-color: #d1ecf1 !important; }
+    .decision-repechage { background-color: #ffe5b4 !important; }
+    .mg-green { color: #198754; font-weight: bold; }
+    .mg-red { color: #dc3545; font-weight: bold; }
+    .mg-neutral { font-weight: bold; }
+    .delib-table th, .delib-table td { vertical-align: middle; }
+    .statut-brouillon { color: #6c757d; }
+    .statut-valide { color: #198754; }
+    .statut-publie { color: #0d6efd; }
+    .legend-item { display: inline-block; margin-right: 15px; font-size: 0.85rem; }
+    .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Barre d'infos -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <div>
+        <h5 class="mb-0">
+            <i class="bi bi-clipboard-check me-2 text-primary"></i>
+            {{ classe.nom }} — {{ trimester.nom }}
+        </h5>
+        <small class="text-muted">
+            {{ bulletins|length }} eleves &middot;
+            {% if deliberation %}
+                Statut : <strong class="statut-{{ deliberation.statut }}">{{ deliberation.statut|capitalize }}</strong>
+                {% if deliberation.date_deliberation %}
+                    &middot; Delibere le {{ deliberation.date_deliberation.strftime('%d/%m/%Y a %H:%M') }}
+                {% endif %}
+            {% else %}
+                Statut : <strong class="text-muted">Aucune deliberation</strong>
+            {% endif %}
+        </small>
+    </div>
+    <div>
+        <a href="{{ url_for('academic.deliberation_list', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour
+        </a>
+        <button type="button" class="btn btn-success btn-sm" id="btn-valider" onclick="saveDeliberation()">
+            <i class="bi bi-check-lg me-1"></i> Valider les decisions
+        </button>
+        {% if deliberation and deliberation.statut == 'valide' %}
+        <button type="button" class="btn btn-primary btn-sm" id="btn-publier" onclick="saveDeliberation('publie')">
+            <i class="bi bi-send me-1"></i> Publier
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Legende des decisions -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <span class="text-muted small me-2">Decisions :</span>
+        <span class="legend-item"><span class="legend-dot bg-success"></span> Passe</span>
+        <span class="legend-item"><span class="legend-dot bg-danger"></span> Redouble</span>
+        <span class="legend-item"><span class="legend-dot bg-warning"></span> Avertissement</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#0d6efd;"></span> Encouragement</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#17a2b8;"></span> Felicitations</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ffa500;"></span> Repechage</span>
+    </div>
+</div>
+
+<!-- Tableau de deliberation -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover delib-table mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-center" style="width:40px;">N°</th>
+                        <th>Élève</th>
+                        {% for cs in cs_list %}
+                            <th class="text-center" title="{{ cs.subject.nom }} (coef {{ cs.coefficient }})">
+                                {{ cs.subject.nom[:10] }}{% if cs.subject.nom|length > 10 %}..{% endif %}
+                            </th>
+                        {% endfor %}
+                        <th class="text-center" style="width:70px;">Moy. G.</th>
+                        <th style="width:180px;">Decision</th>
+                        <th style="width:200px;">Appreciation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bulletins %}
+                    <tr id="row-{{ b.profile.id }}" data-student-id="{{ b.profile.id }}">
+                        <td class="text-center text-muted small">{{ loop.index }}</td>
+                        <td class="fw-semibold">
+                            {{ b.eleve.prenom }} {{ b.eleve.nom }}
+                            {% if b.rang %}
+                                <span class="badge bg-secondary ms-1">{{ b.rang }}<sup>e</sup></span>
+                            {% endif %}
+                        </td>
+                        {% for m in b.matieres %}
+                            <td class="text-center">
+                                {% if m.moyenne is not none %}
+                                    {% if m.moyenne >= 14 %}
+                                        <span class="mg-green">{{ m.moyenne }}</span>
+                                    {% elif m.moyenne < 10 %}
+                                        <span class="mg-red">{{ m.moyenne }}</span>
+                                    {% else %}
+                                        <span class="mg-neutral">{{ m.moyenne }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="text-center">
+                            {% if b.moyenne_generale is not none %}
+                                {% if b.moyenne_generale >= 14 %}
+                                    <span class="mg-green">{{ b.moyenne_generale }}</span>
+                                {% elif b.moyenne_generale < 10 %}
+                                    <span class="mg-red">{{ b.moyenne_generale }}</span>
+                                {% else %}
+                                    <span class="mg-neutral">{{ b.moyenne_generale }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm decision-select" id="decision-{{ b.profile.id }}"
+                                    onchange="onDecisionChange({{ b.profile.id }}, this.value)">
+                                {% for val, label in decisions_possibles %}
+                                    <option value="{{ val }}"
+                                        {% if b.decision_actuelle == val %}selected{% endif %}
+                                        class="decision-{{ val }}">
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm appreciation-input"
+                                   id="appreciation-{{ b.profile.id }}"
+                                   placeholder="Appreciation..."
+                                   maxlength="200">
+                        </td>
+                    </tr>
+                    <tr class="matieres-repechage-row" id="repechage-row-{{ b.profile.id }}" style="display:none;">
+                        <td colspan="{{ cs_list|length + 5 }}" style="background:#fff8e1; padding:10px 15px;">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-journal-check me-2 text-warning"></i>
+                                <strong>Matières à reprendre pour {{ b.eleve.prenom }} {{ b.eleve.nom }} :</strong>
+                            </div>
+                            <div class="row">
+                                {% for m in b.matieres %}
+                                <div class="col-md-4 col-sm-6 mb-1">
+                                    <label class="form-check form-check-inline">
+                                        <input type="checkbox" class="form-check-input matiere-repechage"
+                                               name="matiere_repechage_{{ b.profile.id }}"
+                                               value="{{ m.subject.id }}"
+                                               data-student="{{ b.profile.id }}"
+                                               {% if m.subject.id in b.matieres_repechage %}checked{% endif %}>
+                                        <span class="form-check-label">
+                                            {{ m.subject.nom }}
+                                            {% if m.moyenne is not none %}
+                                                <span class="badge {% if m.moyenne < 10 %}bg-danger{% else %}bg-secondary{% endif %} ms-1">{{ m.moyenne }}/20</span>
+                                            {% endif %}
+                                            (coef {{ m.coefficient }})
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bouton fixe en bas -->
+<div class="d-flex justify-content-end mt-3">
+    <button type="button" class="btn btn-success" id="btn-valider-bottom" onclick="saveDeliberation()">
+        <i class="bi bi-check-lg me-1"></i> Valider les decisions
+    </button>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Couleur du select selon la decision
+    const decisionColors = {
+        'passe': '#d4edda',
+        'redouble': '#f8d7da',
+        'avertissement': '#fff3cd',
+        'encouragement': '#cce5ff',
+        'felicitations': '#d1ecf1',
+        'repechage': '#ffe5b4'
+    };
+
+    function updateSelectColor(select) {
+        const val = select.value;
+        select.style.backgroundColor = decisionColors[val] || '';
+    }
+
+    // Initialiser les couleurs et la visibilite des lignes repechage
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.decision-select').forEach(sel => {
+            updateSelectColor(sel);
+            // Afficher les lignes repechage si deja selectionne
+            const studentId = sel.id.replace('decision-', '');
+            const repechageRow = document.getElementById('repechage-row-' + studentId);
+            if (repechageRow) {
+                repechageRow.style.display = (sel.value === 'repechage') ? '' : 'none';
+            }
+        });
+    });
+
+    function onDecisionChange(studentId, decision) {
+        const select = document.getElementById('decision-' + studentId);
+        updateSelectColor(select);
+        // Afficher/masquer la ligne des matieres a reprendre
+        const repechageRow = document.getElementById('repechage-row-' + studentId);
+        if (repechageRow) {
+            repechageRow.style.display = (decision === 'repechage') ? '' : 'none';
+        }
+    }
+
+    // Appliquer les couleurs automatiquement aux rows
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const select = row.querySelector('.decision-select');
+            if (select) {
+                row.style.backgroundColor = decisionColors[select.value] + '40'; // 40 = alpha
+            }
+        });
+        document.querySelectorAll('.decision-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const row = this.closest('tr');
+                row.style.backgroundColor = decisionColors[this.value] + '40';
+            });
+        });
+    });
+
+    function saveDeliberation(statut) {
+        statut = statut || 'valide';
+        const decisions = {};
+        const matieres_repechage = {};
+        document.querySelectorAll('.decision-select').forEach(sel => {
+            const studentId = sel.id.replace('decision-', '');
+            decisions[studentId] = sel.value;
+        });
+        // Collecter les matieres a reprendre
+        document.querySelectorAll('.matiere-repechage:checked').forEach(cb => {
+            const studentId = cb.getAttribute('data-student');
+            if (!matieres_repechage[studentId]) {
+                matieres_repechage[studentId] = [];
+            }
+            matieres_repechage[studentId].push(parseInt(cb.value));
+        });
+
+        const btnValider = document.getElementById('btn-valider');
+        const btnValiderBottom = document.getElementById('btn-valider-bottom');
+        const btnPublier = document.getElementById('btn-publier');
+        [btnValider, btnValiderBottom, btnPublier].forEach(b => {
+            if (b) b.disabled = true;
+        });
+
+        const payload = {
+            class_id: {{ classe.id }},
+            trimester_id: {{ trimester.id }},
+            decisions: decisions,
+            matieres_repechage: matieres_repechage,
+            statut: statut
+        };
+
+        fetch("{{ url_for('academic.deliberation_save', school_id=school_id) }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Inconnue'));
+            }
+        })
+        .catch(err => {
+            alert('Erreur reseau: ' + err.message);
+        })
+        .finally(() => {
+            [btnValider, btnValiderBottom, btnPublier].forEach(b => {
+                if (b) b.disabled = false;
+            });
+        });
+    }
+</script>
+{% endblock %}

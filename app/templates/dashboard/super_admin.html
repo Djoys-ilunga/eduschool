@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Super Admin - EduSchool{% endblock %}
+{% block page_title %}Tableau de bord — Super Administrateur{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Ecoles</h6>
+                        <h2 class="mb-0">{{ stats.total_ecoles }}</h2>
+                        <small class="text-success">{{ stats.ecoles_actives }} actives</small>
+                    </div>
+                    <div class="fs-1 text-primary">
+                        <i class="bi bi-buildings"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Eleves</h6>
+                        <h2 class="mb-0">{{ stats.total_eleves }}</h2>
+                    </div>
+                    <div class="fs-1 text-success">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Enseignants</h6>
+                        <h2 class="mb-0">{{ stats.total_enseignants }}</h2>
+                    </div>
+                    <div class="fs-1 text-info">
+                        <i class="bi bi-person-workspace"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Classes</h6>
+                        <h2 class="mb-0">{{ stats.total_classes }}</h2>
+                    </div>
+                    <div class="fs-1 text-warning">
+                        <i class="bi bi-diagram-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-secondary border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Admins ecole</h6>
+                        <h2 class="mb-0">{{ stats.total_admins }}</h2>
+                    </div>
+                    <div class="fs-1 text-secondary">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Parents</h6>
+                        <h2 class="mb-0">{{ stats.total_parents }}</h2>
+                    </div>
+                    <div class="fs-1 text-primary">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Matieres</h6>
+                        <h2 class="mb-0">{{ stats.total_matieres }}</h2>
+                    </div>
+                    <div class="fs-1 text-info">
+                        <i class="bi bi-book"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Abonnements actifs</h6>
+                        <h2 class="mb-0">{{ stats.abonnements_actifs }}</h2>
+                    </div>
+                    <div class="fs-1 text-success">
+                        <i class="bi bi-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Écoles créées par mois</h5></div>
+            <div class="card-body">
+                <canvas id="ecolesChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Répartition des rôles</h5></div>
+            <div class="card-body">
+                <canvas id="rolesChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Écoles récentes</h5>
+                <a href="{{ url_for('schools.create') }}" class="btn btn-primary btn-sm">+ Nouvelle école</a>
+            </div>
+            <div class="card-body p-0">
+                {% if ecoles_recentes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Code</th>
+                                <th>Ville</th>
+                                <th>Statut</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ecole in ecoles_recentes %}
+                            <tr>
+                                <td>{{ ecole.nom }}</td>
+                                <td><code>{{ ecole.code }}</code></td>
+                                <td>{{ ecole.ville or '-' }}</td>
+                                <td>
+                                    {% if ecole.statut == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif ecole.statut == 'suspendue' %}
+                                        <span class="badge bg-danger">Suspendue</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ ecole.statut }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('schools.detail', school_id=ecole.id) }}" class="btn btn-sm btn-outline-primary">Détails</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    Aucune école enregistrée.
+                    <a href="{{ url_for('schools.create') }}">Créer la première école</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ecoles par mois
+    var ctx1 = document.getElementById('ecolesChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: {{ ecoles_labels|tojson }},
+            datasets: [{
+                label: 'Écoles créées',
+                data: {{ ecoles_counts|tojson }},
+                backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                borderColor: 'rgba(13, 110, 253, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Repartition des roles
+    var ctx2 = document.getElementById('rolesChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'pie',
+        data: {
+            labels: {{ repartition_roles.labels|tojson }},
+            datasets: [{
+                data: {{ repartition_roles.data|tojson }},
+                backgroundColor: [
+                    'rgba(108, 117, 125, 0.8)',
+                    'rgba(13, 202, 240, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    'rgba(25, 135, 84, 0.8)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

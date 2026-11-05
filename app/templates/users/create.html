@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier ' + utilisateur.nom_complet if utilisateur else 'Nouvel utilisateur' }} - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + utilisateur.nom_complet if utilisateur else 'Nouvel utilisateur' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Informations personnelles</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.prenom.label(class="form-label") }}
+                            {{ form.prenom(class="form-control" + (" is-invalid" if form.prenom.errors else ""), placeholder="Prénom") }}
+                            {% if form.prenom.errors %}<div class="invalid-feedback">{{ form.prenom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Nom") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="utilisateur@email.com") }}
+                            {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.telephone.label(class="form-label") }}
+                            {{ form.telephone(class="form-control", placeholder="+243 812 345 678") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Rôle & École</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-select" + (" is-invalid" if form.role.errors else "")) }}
+                            {% if form.role.errors %}<div class="invalid-feedback">{{ form.role.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.school_id.label(class="form-label") }}
+                            {{ form.school_id(class="form-select") }}
+                            <small class="text-muted">Super Admin : pas d'école. Autres rôles : école obligatoire.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Sécurité</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""),
+                               placeholder="{% if utilisateur %}Laisser vide pour ne pas changer{% else %}Minimum 8 caractères{% endif %}") }}
+                            {% if form.password.errors %}<div class="invalid-feedback">{{ form.password.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.password_confirm.label(class="form-label") }}
+                            {{ form.password_confirm(class="form-control" + (" is-invalid" if form.password_confirm.errors else "")) }}
+                            {% if form.password_confirm.errors %}<div class="invalid-feedback">{{ form.password_confirm.errors[0] }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="form-check">
+                        {{ form.actif(class="form-check-input") }}
+                        {{ form.actif.label(class="form-check-label") }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('users.list') }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">ℹ️ Rôles disponibles</h6></div>
+            <div class="card-body small">
+                <p><strong>Super Admin :</strong> Accès complet à toutes les écoles et paramètres.</p>
+                <p><strong>Admin École :</strong> Gère son établissement (utilisateurs, classes, notes, finances).</p>
+                <p><strong>Enseignant :</strong> Gère ses classes, saisit les notes, consulte l'emploi du temps.</p>
+                <p><strong>Parent :</strong> Suit les notes, absences et paiements de ses enfants.</p>
+                <p><strong>Élève :</strong> Consulte ses notes et son emploi du temps.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

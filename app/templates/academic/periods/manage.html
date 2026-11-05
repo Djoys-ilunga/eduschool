@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Gestion des {{ school.division_label }}s - EduSchool{% endblock %}
+{% block page_title %}Parametrage : {{ school.division_label }}s & Periodes{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary small mb-3">
+    <strong>Ecole :</strong> {{ school.nom }} ({{ school.type_ecole or 'Non defini' }})
+    &mdash; <strong>Cycle :</strong> {{ school.cycle }} &mdash; {{ school.nb_divisions }} {{ school.division_label|lower }}s
+    {% if annee %}&mdash; <strong>Annee :</strong> {{ annee.nom }}{% endif %}
+</div>
+
+{% if not annee %}
+<div class="alert alert-warning">Creez d'abord une annee scolaire active pour configurer les {{ school.division_label|lower }}s.</div>
+{% endif %}
+
+{% for div in divisions %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <span class="badge bg-primary me-2">{{ div.numero }}</span>
+            {{ div.nom }}
+        </h5>
+        <div>
+            <small class="text-muted me-3">{{ div.date_debut.strftime('%d/%m/%Y') }} → {{ div.date_fin.strftime('%d/%m/%Y') }}</small>
+            <a href="{{ url_for('academic.edit_periods', div_id=div.id, school_id=school_id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil me-1"></i> Gerer les periodes
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if div.periodes %}
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th><th>Nom</th><th>Periode</th><th>Coef.</th><th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in div.periodes %}
+                    <tr>
+                        <td>{{ p.numero }}</td>
+                        <td class="fw-semibold">{{ p.nom }}</td>
+                        <td><small>{{ p.date_debut.strftime('%d/%m/%Y') }} → {{ p.date_fin.strftime('%d/%m/%Y') }}</small></td>
+                        <td><span class="badge bg-light text-dark">{{ p.coefficient }}</span></td>
+                        <td><span class="badge bg-secondary">{{ p.type_evaluation }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-3 text-muted">Aucune periode definie.</div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if not divisions %}
+<div class="alert alert-info">Aucun {{ school.division_label|lower }} trouve. Creez une annee scolaire d'abord.</div>
+{% endif %}
+{% endblock %}

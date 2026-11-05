@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Enseignant - EduSchool{% endblock %}
+{% block page_title %}Tableau de bord — Enseignant{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-primary mb-0">{{ matieres_enseignees|length }}</h1>
+                <small class="text-muted">Matières enseignées</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-success mb-0">{{ classes_titulaire|length }}</h1>
+                <small class="text-muted">Classes titulaires</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-info mb-0">
+                    {{ (matieres_enseignees|map(attribute='classe')|map(attribute='id')|unique|list)|length }}
+                </h1>
+                <small class="text-muted">Classes couvertes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning border-start border-4 h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+                <div class="d-grid gap-1 w-100">
+                    <a href="{{ url_for('academic.list_grades', school_id=current_user.school_id) }}" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-pencil-square me-1"></i> Saisir notes
+                    </a>
+                    <a href="{{ url_for('academic.view_timetable', teacher_id=current_user.id, school_id=current_user.school_id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-calendar3 me-1"></i> Mon emploi du temps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% if moyennes_data %}
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Moyennes par matière/classe</h5></div>
+            <div class="card-body">
+                <canvas id="moyennesChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if matieres_enseignees %}
+    <div class="col-md-{{ '4' if moyennes_data else '6' }}">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Mes matières</h5></div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for cs in matieres_enseignees %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ cs.subject.nom }}</strong>
+                                <small class="text-muted ms-2">Coef. {{ cs.coefficient }}</small>
+                            </div>
+                            <span class="badge bg-light text-dark">{{ cs.classe.nom }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if classes_titulaire %}
+    <div class="col-md-{{ '4' if moyennes_data or matieres_enseignees else '6' }}">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Classes titulaires</h5></div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for c in classes_titulaire %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <strong>{{ c.nom }}</strong>
+                        <span class="badge bg-info">{{ c.annee_scolaire.nom }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not matieres_enseignees and not classes_titulaire %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Aucune matière ou classe ne vous est encore assignée. Contactez l'administration de votre école.
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if moyennes_data %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('moyennesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ moyennes_labels|tojson }},
+            datasets: [{
+                label: 'Moyenne /20',
+                data: {{ moyennes_data|tojson }},
+                backgroundColor: 'rgba(13, 202, 240, 0.7)',
+                borderColor: 'rgba(13, 202, 240, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 20,
+                    ticks: { stepSize: 2 }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

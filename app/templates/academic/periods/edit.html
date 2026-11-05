@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Periodes de {{ division.nom }} - EduSchool{% endblock %}
+{% block page_title %}{{ division.nom }} — Periodes{% endblock %}
+
+{% block content %}
+<div class="alert alert-secondary small mb-3">
+    <strong>{{ school.division_label }} :</strong> {{ division.nom }}
+    &mdash; {{ division.date_debut.strftime('%d/%m/%Y') }} → {{ division.date_fin.strftime('%d/%m/%Y') }}
+    &mdash; <strong>{{ division.periodes|length }}</strong> periode{{ 's' if division.periodes|length != 1 }}
+</div>
+
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <!-- Division header -->
+    <div class="card mb-3 bg-light">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small">Nom du {{ div_label|lower }}</label>
+                    <input name="div_nom" class="form-control form-control-sm" value="{{ division.nom }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Debut</label>
+                    <input name="div_debut" type="date" class="form-control form-control-sm" value="{{ division.date_debut }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Fin</label>
+                    <input name="div_fin" type="date" class="form-control form-control-sm" value="{{ division.date_fin }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Enregistrer tout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Periodes existantes -->
+    {% for p in division.periodes %}
+    <div class="card mb-2">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-0">Nom</label>
+                    <input name="p{{ p.id }}_nom" class="form-control form-control-sm" value="{{ p.nom }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Debut</label>
+                    <input name="p{{ p.id }}_debut" type="date" class="form-control form-control-sm" value="{{ p.date_debut }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Fin</label>
+                    <input name="p{{ p.id }}_fin" type="date" class="form-control form-control-sm" value="{{ p.date_fin }}">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small mb-0">Coef</label>
+                    <input name="p{{ p.id }}_coef" type="number" step="0.1" min="0.1" max="10" class="form-control form-control-sm" value="{{ p.coefficient }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Type</label>
+                    <select name="p{{ p.id }}_type" class="form-select form-select-sm">
+                        <option value="continue" {% if p.type_evaluation == 'continue' %}selected{% endif %}>Continue</option>
+                        <option value="composition" {% if p.type_evaluation == 'composition' %}selected{% endif %}>Composition</option>
+                        <option value="examen" {% if p.type_evaluation == 'examen' %}selected{% endif %}>Examen</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <label class="form-check-label small">
+                        <input type="checkbox" name="delete_periods" value="{{ p.id }}" class="form-check-input"> Suppr.
+                    </label>
+                </div>
+                <div class="col-md-1">
+                    <span class="badge bg-light text-dark">P{{ p.numero }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Ajouter une periode -->
+    <div class="card border-success mb-3">
+        <div class="card-header bg-success bg-opacity-10">
+            <h6 class="mb-0 text-success">+ Nouvelle periode</h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small mb-0">Nom</label>
+                    <input name="new_nom" class="form-control form-control-sm" placeholder="Ex: Rattrapage">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Debut</label>
+                    <input name="new_debut" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Fin</label>
+                    <input name="new_fin" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small mb-0">Coef</label>
+                    <input name="new_coef" type="number" step="0.1" min="0.1" max="10" class="form-control form-control-sm" value="1">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Type</label>
+                    <select name="new_type" class="form-select form-select-sm">
+                        <option value="continue">Continue</option>
+                        <option value="composition">Composition</option>
+                        <option value="examen">Examen</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success btn-sm w-100">+ Ajouter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Enregistrer toutes les modifications</button>
+        <a href="{{ url_for('academic.manage_periods', school_id=school_id) }}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+</form>
+{% endblock %}

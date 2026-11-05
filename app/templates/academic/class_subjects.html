@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Matières de {{ classe.nom }} - EduSchool{% endblock %}
+{% block page_title %}Matières — {{ classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Colonne gauche : matières actuelles -->
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ class_subjects|length }} matière{{ 's' if class_subjects|length != 1 }} associée{{ 's' if class_subjects|length != 1 }}</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if class_subjects %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Matière</th>
+                                <th>Coef.</th>
+                                <th>H/sem</th>
+                                <th>Enseignant</th>
+                                <th>Groupe</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cs in class_subjects %}
+                            <tr>
+                                <td class="fw-semibold">{{ cs.subject.nom }}</td>
+                                <td><span class="badge bg-primary">{{ cs.coefficient }}</span></td>
+                                <td>{{ cs.heures_par_semaine|int if cs.heures_par_semaine else '-' }}</td>
+                                <td>{{ cs.teacher.nom_complet if cs.teacher else '-' }}</td>
+                                <td>{{ cs.groupe or '-' }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('academic.edit_class_subject', cs_id=cs.id) }}"
+                                           class="btn btn-outline-secondary" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('academic.delete_class_subject', cs_id=cs.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-danger"
+                                                    data-confirm="Retirer {{ cs.subject.nom }} de cette classe ?"
+                                                    title="Retirer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <p>Aucune matière associée à cette classe.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne droite : ajouter -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Ajouter une matière</h5></div>
+            <div class="card-body">
+                {% if form.subject_id.choices|length > 1 %}
+                <form method="POST" action="{{ url_for('academic.add_class_subject', class_id=classe.id) }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.subject_id.label(class="form-label") }}
+                        {{ form.subject_id(class="form-select" + (" is-invalid" if form.subject_id.errors else "")) }}
+                        {% if form.subject_id.errors %}<div class="invalid-feedback">{{ form.subject_id.errors[0] }}</div>{% endif %}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            {{ form.coefficient.label(class="form-label") }}
+                            {{ form.coefficient(class="form-control" + (" is-invalid" if form.coefficient.errors else ""), placeholder="1") }}
+                            {% if form.coefficient.errors %}<div class="invalid-feedback">{{ form.coefficient.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-6">
+                            {{ form.heures_par_semaine.label(class="form-label") }}
+                            {{ form.heures_par_semaine(class="form-control", placeholder="Ex: 4") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.teacher_id.label(class="form-label") }}
+                        {{ form.teacher_id(class="form-select") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.groupe.label(class="form-label") }}
+                        {{ form.groupe(class="form-control", placeholder="Optionnel") }}
+                    </div>
+
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+                {% else %}
+                <p class="text-muted mb-0">Toutes les matières disponibles sont déjà associées.</p>
+                <a href="{{ url_for('academic.create_subject', school_id=school_id) }}" class="btn btn-outline-primary btn-sm mt-2">
+                    Créer une nouvelle matière
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('academic.list_classes', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Retour aux classes
+    </a>
+</div>
+{% endblock %}

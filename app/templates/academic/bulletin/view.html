@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if period %}Bulletin - {{ period.nom }}{% else %}Bulletin - {{ trimester.nom }}{% endif %}
+  - EduSchool
+{% endblock %}
+
+{% block page_title %}
+  {% if period %}
+    {{ school.division_label }} {{ trimester.numero }} — {{ period.nom }}
+  {% else %}
+    {{ school.division_label }} {{ trimester.numero }} — {{ trimester.nom }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label small">Classe</label>
+        <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">-- Choisir --</option>
+          {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>
+              {{ c.nom }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <a href="{{ url_for('academic.manage_periods', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm me-1">
+          <i class="bi bi-sliders me-1"></i> Parametrage
+        </a>
+        {% if selected_class and bulletin and bulletin.students %}
+          {% if period %}
+            <a href="{{ url_for('academic.bulletin_pdf', type='period', id=period.id, class_id=selected_class.id, school_id=school_id) }}"
+               class="btn btn-danger btn-sm">
+              <i class="bi bi-file-pdf me-1"></i> PDF
+            </a>
+          {% else %}
+            <a href="{{ url_for('academic.bulletin_pdf', type='trimester', id=trimester.id, class_id=selected_class.id, school_id=school_id) }}"
+               class="btn btn-danger btn-sm">
+              <i class="bi bi-file-pdf me-1"></i> PDF
+            </a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if bulletin and bulletin.students %}
+  <!-- Resume -->
+  <div class="alert alert-secondary small mb-3">
+    <strong>{{ bulletin.total_eleves }}</strong> eleve{{ 's' if bulletin.total_eleves > 1 }} —
+    <strong>{{ bulletin.total_subjects }}</strong> matiere{{ 's' if bulletin.total_subjects > 1 }} —
+    <strong>{{ bulletin.periods|length }}</strong> periode{{ 's' if bulletin.periods|length > 1 }} :
+    {% for p in bulletin.periods %}{{ p.nom }}{% if not loop.last %}, {% endif %}{% endfor %}
+  </div>
+
+  <!-- Tableau principal -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0 bulletin-table">
+          <thead class="table-primary text-center">
+            <tr>
+              <th rowspan="2" class="align-middle">N°</th>
+              <th rowspan="2" class="align-middle text-start">Eleve</th>
+              {% for cs in bulletin.students[0].subjects %}
+                <th>{{ cs.subject.nom[:12] }}</th>
+              {% endfor %}
+              <th rowspan="2" class="align-middle">Moy. G.</th>
+              <th rowspan="2" class="align-middle">Rang</th>
+              <th rowspan="2" class="align-middle">Appreciation</th>
+            </tr>
+            <tr class="table-light">
+              {% for cs in bulletin.students[0].subjects %}
+                <th class="small text-muted">/20</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% set ns = namespace() %}
+            {% for sr in bulletin.students %}
+              <tr class="{% if filter_student_id and sr.student.id == filter_student_id %}table-warning{% endif %}">
+                <td class="text-center small">{{ loop.index }}</td>
+                <td class="fw-semibold">
+                  {{ sr.student.prenom }} {{ sr.student.nom }}
+                </td>
+                {% for subj in sr.subjects %}
+                  <td class="text-center">
+                    {% if subj.avg is not none %}
+                      {% if subj.avg < 10 %}<span class="text-danger fw-bold">{{ subj.avg }}</span>
+                      {% elif subj.avg >= 14 %}<span class="text-success fw-bold">{{ subj.avg }}</span>
+                      {% else %}{{ subj.avg }}{% endif %}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td class="text-center fw-bold">
+                  {% if sr.moyenne_generale >= 14 %}<span class="text-success">{{ sr.moyenne_generale }}</span>
+                  {% elif sr.moyenne_generale < 10 %}<span class="text-danger">{{ sr.moyenne_generale }}</span>
+                  {% else %}{{ sr.moyenne_generale }}{% endif %}
+                </td>
+                <td class="text-center">{{ sr.rank }}/{{ bulletin.total_eleves }}</td>
+                <td class="text-center small">
+                  {% set appr = sr.appreciation %}
+                  {% if 'Tres' in appr %}<span class="badge bg-success">{{ appr }}</span>
+                  {% elif 'Bien' in appr %}<span class="badge bg-info">{{ appr }}</span>
+                  {% elif 'Assez' in appr %}<span class="badge bg-secondary">{{ appr }}</span>
+                  {% elif 'Passable' in appr %}<span class="badge bg-warning text-dark">{{ appr }}</span>
+                  {% else %}<span class="badge bg-danger">{{ appr }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail par eleve -->
+  {% for sr in bulletin.students %}
+  <div class="card mt-3 bulletin-detail">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="mb-0">
+        {{ loop.index }}. {{ sr.student.prenom }} {{ sr.student.nom }}
+        <span class="badge bg-primary ms-2">Moy: {{ sr.moyenne_generale }}/20</span>
+        <span class="badge bg-light text-dark ms-1">Rang: {{ sr.rank }}/{{ bulletin.total_eleves }}</span>
+      </h6>
+      {% if period %}
+        <a href="{{ url_for('academic.bulletin_pdf_student', student_id=sr.student_profile.id, div_id=period.id) }}"
+           class="btn btn-outline-danger btn-sm" title="Telecharger PDF">
+          <i class="bi bi-file-pdf"></i>
+        </a>
+      {% else %}
+        <a href="{{ url_for('academic.bulletin_pdf_student', student_id=sr.student_profile.id, div_id=trimester.id) }}"
+           class="btn btn-outline-danger btn-sm" title="Telecharger PDF">
+          <i class="bi bi-file-pdf"></i>
+        </a>
+      {% endif %}
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+        <thead class="table-light small">
+          <tr>
+            <th>Matiere</th><th>Coef.</th>
+            {% for p in bulletin.periods %}
+              <th class="text-center">{{ p.nom[:10] }}</th>
+            {% endfor %}
+            <th class="text-center">Moy.</th>
+            <th>Appreciation</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          {% for subj in sr.subjects %}
+            <tr>
+              <td class="fw-semibold">{{ subj.subject.nom }}</td>
+              <td class="text-center">{{ subj.cs.coefficient }}</td>
+              {% for p in bulletin.periods %}
+                <td class="text-center">
+                  {% set ns = namespace(period_avg=None) %}
+                  {% for g in subj.grades %}
+                    {% if g.coef %}
+                      {# find if any grade belongs to this period #}
+                    {% endif %}
+                  {% endfor %}
+                  {% for g in subj.grades %}
+                    {% if g.date %}{{ g.date }}: {{ g.valeur }}/{{ g.max }}  {% endif %}
+                  {% endfor %}
+                </td>
+              {% endfor %}
+              <td class="text-center fw-bold">
+                {% if subj.avg is not none %}
+                  {% if subj.avg < 10 %}<span class="text-danger">{{ subj.avg }}</span>
+                  {% elif subj.avg >= 14 %}<span class="text-success">{{ subj.avg }}</span>
+                  {% else %}{{ subj.avg }}{% endif %}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if subj.avg is not none %}
+                  {% if subj.avg >= 16 %}Tres Bien{% elif subj.avg >= 14 %}Bien{% elif subj.avg >= 12 %}Assez Bien{% elif subj.avg >= 10 %}Passable{% else %}Insuffisant{% endif %}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+
+{% elif bulletin %}
+  <div class="alert alert-info">Aucun eleve avec des notes dans cette periode.</div>
+{% else %}
+  <div class="alert text-center py-5">
+    <i class="bi bi-file-earmark-text display-4 text-muted"></i>
+    <p class="mt-3 text-muted">Selectionnez une classe pour afficher le bulletin.</p>
+  </div>
+{% endif %}
+{% endblock %}

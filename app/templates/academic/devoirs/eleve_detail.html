@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.titre }} - EduSchool{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('students.devoirs_eleve') }}">Mes devoirs</a></li>
+            <li class="breadcrumb-item active">{{ assignment.titre }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <h4>{{ assignment.titre }}</h4>
+            <p class="text-muted small">
+                <i class="bi bi-book me-1"></i>{{ assignment.subject.nom if assignment.subject else 'Devoir' }}
+                &middot; <i class="bi bi-calendar-event me-1"></i>
+                {% if assignment.est_en_retard %}
+                <span class="text-danger">Date limite dépassée: {{ assignment.date_limite.strftime('%d/%m/%Y à %H:%M') }}</span>
+                {% else %}
+                Date limite: {{ assignment.date_limite.strftime('%d/%m/%Y à %H:%M') }}
+                {% endif %}
+                {% if assignment.max_points %}&middot; Note max: {{ assignment.max_points }}{% endif %}
+            </p>
+
+            {% if assignment.description %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h6>Consignes</h6>
+                    <p class="mb-0">{{ assignment.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if assignment.fichier_joint_nom %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-body py-2">
+                    <i class="bi bi-paperclip me-1"></i>
+                    <strong>Énoncé :</strong> {{ assignment.fichier_joint_nom }}
+                    <a href="/uploads/{{ assignment.fichier_joint }}" class="btn btn-sm btn-outline-primary ms-2" download>
+                        <i class="bi bi-download me-1"></i>Télécharger
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ma soumission -->
+            {% if submission %}
+            <div class="card shadow-sm mb-3 border-success">
+                <div class="card-header bg-success bg-opacity-10">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i>Devoir rendu
+                    <small class="text-muted ms-2">{{ submission.date_soumission.strftime('le %d/%m/%Y à %H:%M') }}</small>
+                    {% if submission.est_en_retard %}
+                    <span class="badge bg-warning ms-2">En retard</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if submission.fichier_nom %}
+                    <p><i class="bi bi-file-earmark me-1"></i><strong>Fichier :</strong> {{ submission.fichier_nom }}
+                        <a href="/uploads/{{ submission.fichier }}" class="btn btn-sm btn-outline-primary ms-2" download>
+                            <i class="bi bi-download me-1"></i>Télécharger
+                        </a>
+                    </p>
+                    {% endif %}
+                    {% if submission.commentaire %}
+                    <p><i class="bi bi-chat-dots me-1"></i><strong>Commentaire :</strong> {{ submission.commentaire }}</p>
+                    {% endif %}
+
+                    {% if submission.note is not none %}
+                    <div class="alert alert-success mt-3 mb-0">
+                        <strong><i class="bi bi-star-fill me-1"></i>Note : {{ submission.note }}{% if assignment.max_points %}/{{ assignment.max_points }}{% endif %}</strong>
+                        {% if submission.feedback %}
+                        <hr class="my-2">
+                        <p class="mb-0 small"><strong>Feedback :</strong> {{ submission.feedback }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Formulaire de soumission -->
+            {% if not submission or assignment.authorise_retard %}
+            <div class="card shadow-sm mb-3" id="formSoumission">
+                <div class="card-header">
+                    <i class="bi bi-upload me-1"></i>
+                    {% if submission %}Remplacer ma soumission{% else %}Soumettre mon travail{% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('students.devoirs_eleve_submit', assignment_id=assignment.id) }}" enctype="multipart/form-data">
+                        {{ _csrf() }}
+                        <div class="mb-3">
+                            <label class="form-label">Fichier <span class="text-danger">*</span></label>
+                            <input type="file" name="fichier" class="form-control" required
+                                   accept=".pdf,.docx,.xlsx,.pptx,.jpg,.jpeg,.png,.zip,.txt,.py,.c,.cpp,.java,.html,.css">
+                            <small class="text-muted">PDF, DOCX, images, code, archives. Max 16 MB.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Commentaire (optionnel)</label>
+                            <textarea name="commentaire" class="form-control" rows="2" placeholder="Un message pour le professeur..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>
+                            {% if submission %}Renvoyer{% else %}Soumettre{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar infos -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header"><i class="bi bi-info-circle me-1"></i>Informations</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <small class="text-muted">Professeur</small><br>
+                        <strong>{{ assignment.teacher.nom_complet }}</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <small class="text-muted">Classe</small><br>
+                        <strong>{{ assignment.classe.nom }}</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <small class="text-muted">Statut</small><br>
+                        {% if submission %}
+                        <span class="badge bg-success">Rendu</span>
+                        {% elif assignment.est_en_retard %}
+                        <span class="badge bg-danger">Date dépassée</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">À rendre</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+# EduSchool - Fichiers sensibles a NE PAS commiter
+.env
+instance/
+*.db
+__pycache__/
+*.pyc
+*.pyo
+uploads/
+app/static/uploads/
+app/static/archives/
+*.log
+.env.*
+venv/
+.venv/
+*.bak
+AUDIT/
+ANALYSIS/
+fix_*.py
+remove_import*.py
+simulate_*.py
+audit_*.py
+seed_*.py
+search*.txt
+VERIFY_REPORT_*.md
+POLISH_REPORT.md
+DEPLOIEMENT_OFFICIEL.md
+logs/

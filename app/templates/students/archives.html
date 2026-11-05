@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Archives - EduSchool{% endblock %}
+{% block page_title %}Archives{% endblock %}
+
+{% block extra_head %}
+<style>
+    .archive-tabs .nav-link { color: #6c757d; }
+    .archive-tabs .nav-link.active { color: #2B579A; font-weight: 600; }
+    .doc-badge { cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtre année -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <form method="GET" class="d-flex align-items-center gap-2">
+                        <label class="form-label small mb-0 fw-semibold text-nowrap">Année :</label>
+                        <select name="year_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 180px;">
+                            <option value="">-- Toutes --</option>
+                            {% for y in all_years %}
+                            <option value="{{ y.id }}" {% if y.id == year_filter %}selected{% endif %}>{{ y.nom }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if year_filter %}
+                        <a href="{{ url_for('students.archives', school_id=school_id) }}" class="btn btn-sm btn-outline-secondary">✕</a>
+                        {% endif %}
+                    </form>
+                    {% if can_export %}
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('students.archives_export_all', school_id=school_id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download me-1"></i> Export global
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if archives_data %}
+{% for item in archives_data %}
+{% set p = item.profile %}
+
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <div>
+            <strong><i class="bi bi-person-circle me-2"></i>{{ p.user.nom }} {{ p.user.prenom }}</strong>
+            {% if p.matricule %}<code class="ms-2">{{ p.matricule }}</code>{% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            {% if can_export and item.has_docs %}
+            <a href="{{ url_for('students.archives_export_student', profile_id=p.id) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-download me-1"></i> Export
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body py-2">
+        <!-- Documents -->
+        <div class="mb-2">
+            <small class="text-muted fw-semibold"><i class="bi bi-folder me-1"></i>Documents :</small>
+            {% if item.has_docs %}
+                {% for doc in item.docs %}
+                <a href="{{ doc.url }}" target="_blank" class="badge bg-light text-dark text-decoration-none me-1"
+                   title="{{ doc.name }} ({{ (doc.size / 1024)|round|int }} Ko)">
+                    {% if '.pdf' in doc.name %}<i class="bi bi-file-pdf text-danger me-1"></i>
+                    {% elif '.jpg' in doc.name or '.jpeg' in doc.name or '.png' in doc.name %}<i class="bi bi-file-image text-primary me-1"></i>
+                    {% else %}<i class="bi bi-file-earmark me-1"></i>{% endif %}
+                    {{ doc.name }}
+                </a>
+                {% endfor %}
+            {% else %}
+            <span class="text-muted small">Aucun</span>
+            {% endif %}
+        </div>
+        <!-- Bulletins -->
+        <div>
+            <small class="text-muted fw-semibold"><i class="bi bi-journal-check me-1"></i>Bulletins :</small>
+            {% if item.years %}
+                {% for ydata in item.years %}
+                <span class="badge bg-info text-dark me-1">
+                    {{ ydata.year.nom }}
+                    {% if ydata.enrollment.statut == 'actif' %}<small>(actif)</small>{% endif %}
+                </span>
+                {% endfor %}
+            {% else %}
+            <span class="text-muted small">Aucun</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endfor %}
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-archive" style="font-size: 4rem;"></i>
+    <p class="mt-3 fs-5">Aucune archive trouvée.</p>
+</div>
+{% endif %}
+
+<div class="alert alert-light small text-muted mb-0">
+    <i class="bi bi-lock me-1"></i> Archives en lecture seule — aucune modification possible.
+</div>
+{% endblock %}

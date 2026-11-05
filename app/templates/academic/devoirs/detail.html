@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.titre }} - EduSchool{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('academic.devoirs_list') }}">Devoirs</a></li>
+            <li class="breadcrumb-item active">{{ assignment.titre }}</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h4>{{ assignment.titre }}</h4>
+            <p class="text-muted small mb-0">
+                <i class="bi bi-people me-1"></i>{{ assignment.classe.nom }}
+                {% if assignment.subject %}
+                &middot; <i class="bi bi-book me-1"></i>{{ assignment.subject.nom }}
+                {% endif %}
+                &middot; <i class="bi bi-calendar-event me-1"></i>
+                {% if assignment.est_en_retard %}
+                <span class="text-danger">Date limite dépassée: {{ assignment.date_limite.strftime('%d/%m/%Y à %H:%M') }}</span>
+                {% else %}
+                Date limite: {{ assignment.date_limite.strftime('%d/%m/%Y à %H:%M') }}
+                {% endif %}
+                {% if assignment.max_points %}
+                &middot; <i class="bi bi-bar-chart me-1"></i>Note max: {{ assignment.max_points }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if assignment.submissions %}
+            <a href="{{ url_for('academic.devoirs_download', assignment_id=assignment.id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-download me-1"></i>Tout télécharger (ZIP)
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if assignment.description %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="card-title">Description</h6>
+            <p class="mb-0">{{ assignment.description }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if assignment.fichier_joint_nom %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <i class="bi bi-paperclip me-1"></i>
+            <strong>Énoncé :</strong> {{ assignment.fichier_joint_nom }}
+            <a href="/uploads/{{ assignment.fichier_joint }}" class="btn btn-sm btn-outline-primary ms-2" download>
+                <i class="bi bi-download me-1"></i>Télécharger
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Soumissions -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-check2-all me-1"></i>Soumissions ({{ assignment.nombre_soumissions }} / {{ assignment.nombre_eleves_classe }})</span>
+            <small class="text-muted">{{ assignment.nombre_non_rendus }} non rendus</small>
+        </div>
+        <div class="card-body p-0">
+            {% if enrollments %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Élève</th>
+                            <th>Fichier</th>
+                            <th>Soumis le</th>
+                            <th>Délai</th>
+                            <th>Note</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enr in enrollments %}
+                        {% set sub = submissions_map.get(enr.student.id) %}
+                        <tr>
+                            <td>
+                                <strong>{{ enr.student.prenom }} {{ enr.student.nom }}</strong>
+                                {% if profiles_map.get(enr.student.id) and profiles_map.get(enr.student.id).matricule %}
+                                <br><small class="text-muted">{{ profiles_map[enr.student.id].matricule }}</small>
+                                {% endif %}
+                            </td>
+                            {% if sub %}
+                            <td>
+                                <a href="/uploads/{{ sub.fichier }}" class="text-decoration-none" download>
+                                    <i class="bi bi-file-earmark me-1"></i>{{ sub.fichier_nom or 'Fichier' }}
+                                </a>
+                                {% if sub.commentaire %}
+                                <br><small class="text-muted"><i class="bi bi-chat-dots me-1"></i>{{ sub.commentaire[:80] }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ sub.date_soumission.strftime('%d/%m/%Y %H:%M') }}</small>
+                                {% if sub.est_en_retard %}
+                                <span class="badge bg-warning">Retard</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.est_en_retard %}
+                                <span class="text-danger">En retard</span>
+                                {% else %}
+                                <span class="text-success">À temps</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sub.note is not none %}
+                                <span class="badge bg-success">{{ sub.note }}{% if assignment.max_points %}/{{ assignment.max_points }}{% endif %}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#noteModal{{ sub.id }}">
+                                    <i class="bi bi-pencil me-1"></i>{% if sub.note is not none %}Modifier{% else %}Noter{% endif %}
+                                </button>
+                            </td>
+                            {% else %}
+                            <td colspan="3"><span class="text-muted">Non rendu</span></td>
+                            <td>—</td>
+                            <td><span class="text-muted">En attente</span></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">Aucun élève inscrit dans cette classe.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% for enr in enrollments %}
+{% set sub = submissions_map.get(enr.student.id) %}
+{% if sub %}
+<!-- Modal Notation -->
+<div class="modal fade" id="noteModal{{ sub.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('academic.devoirs_note', assignment_id=assignment.id) }}">
+                {{ _csrf() }}
+                <input type="hidden" name="submission_id" value="{{ sub.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Noter — {{ enr.student.prenom }} {{ enr.student.nom }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Note {% if assignment.max_points %}(max: {{ assignment.max_points }}){% endif %}</label>
+                        <input type="number" name="note" class="form-control" step="0.25" min="0"
+                               {% if assignment.max_points %}max="{{ assignment.max_points }}"{% endif %}
+                               value="{{ sub.note or '' }}" placeholder="Ex: 15">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Feedback</label>
+                        <textarea name="feedback" class="form-control" rows="3" placeholder="Commentaire pour l'élève...">{{ sub.feedback or '' }}</textarea>
+                    </div>
+                    {% if sub.fichier %}
+                    <a href="/uploads/{{ sub.fichier }}" class="btn btn-sm btn-outline-primary" download target="_blank">
+                        <i class="bi bi-download me-1"></i>Télécharger le fichier
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Enregistrer la note
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

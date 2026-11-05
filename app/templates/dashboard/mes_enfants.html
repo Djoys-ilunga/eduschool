@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Mes enfants - EduSchool{% endblock %}
+{% block page_title %}Mes enfants ({{ nb_enfants }}){% endblock %}
+
+{% block content %}
+{% for enfant in enfants %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-person-fill me-2 text-primary"></i>
+            {{ enfant.profile.user.nom_complet }}
+        </h5>
+        <span class="badge bg-secondary">{{ enfant.lien.relation or 'Parent' }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Identite -->
+            <div class="col-md-3">
+                <h6 class="text-muted">Identite</h6>
+                <dl class="small mb-0">
+                    <dt>Matricule</dt><dd><code>{{ enfant.profile.matricule or '--' }}</code></dd>
+                    <dt>Sexe</dt><dd>{{ enfant.profile.sexe or '--' }}</dd>
+                    <dt>Ne(e) le</dt><dd>{{ enfant.profile.date_naissance.strftime('%d/%m/%Y') if enfant.profile.date_naissance else '--' }}</dd>
+                    <dt>Ecole</dt><dd>{{ enfant.profile.user.school.nom if enfant.profile.user.school else '--' }}</dd>
+                </dl>
+            </div>
+            <!-- Scolarite -->
+            <div class="col-md-3">
+                <h6 class="text-muted">Scolarite</h6>
+                {% if enfant.enrollment %}
+                <dl class="small mb-0">
+                    <dt>Classe</dt><dd><span class="badge bg-info">{{ enfant.enrollment.classe.nom }}</span></dd>
+                    <dt>Annee</dt><dd>{{ enfant.enrollment.annee_scolaire.nom }}</dd>
+                    <dt>Date inscription</dt><dd>{{ enfant.enrollment.date_inscription.strftime('%d/%m/%Y') if enfant.enrollment.date_inscription else '--' }}</dd>
+                    <dt>Creneaux EDT</dt><dd>{{ enfant.timetable_count }}</dd>
+                </dl>
+                {% else %}
+                <div class="alert alert-warning small py-2">Non inscrit cette annee.</div>
+                {% endif %}
+            </div>
+            <!-- Sante -->
+            <div class="col-md-3">
+                <h6 class="text-muted">Sante</h6>
+                <dl class="small mb-0">
+                    <dt>Groupe sanguin</dt><dd>{{ enfant.profile.groupe_sanguin or '--' }}</dd>
+                    <dt>Allergies</dt><dd>{{ enfant.profile.allergies or 'Aucune' }}</dd>
+                    <dt>Medecin</dt><dd>--</dd>
+                </dl>
+            </div>
+            <!-- Actions -->
+            <div class="col-md-3 d-flex flex-column justify-content-center">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('students.detail', profile_id=enfant.profile.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person-vcard me-1"></i> Fiche complete
+                    </a>
+                    <a href="{{ url_for('students.attestation', profile_id=enfant.profile.id) }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Attestation scolaire
+                    </a>
+                    {% if enfant.enrollment %}
+                    <a href="{{ url_for('academic.releve', profile_id=enfant.profile.id, school_id=current_user.school_id) }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-journal-text me-1"></i> Releve de notes
+                    </a>
+                    <a href="{{ url_for('academic.view_timetable', class_id=enfant.enrollment.class_id, school_id=current_user.school_id) }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-calendar3 me-1"></i> Emploi du temps
+                    </a>
+                    {% endif %}
+                    {% if enfant.latest_grade %}
+                    <small class="text-muted mt-1">
+                        Derniere note : <strong>{{ enfant.latest_grade.valeur }}/{{ enfant.latest_grade.note_max|int }}</strong>
+                        en {{ enfant.latest_grade.class_subject.subject.nom }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if nb_enfants == 0 %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Aucun enfant associe a votre compte. Contactez l'administration de votre ecole.
+</div>
+{% endif %}
+{% endblock %}

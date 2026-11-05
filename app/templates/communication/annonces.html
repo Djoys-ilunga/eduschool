@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Annonces - EduSchool{% endblock %}
+{% block page_title %}Annonces{% endblock %}
+
+{% block extra_head %}
+<style>
+    .annonce-card {
+        transition: all 0.2s ease;
+        border-radius: 8px;
+    }
+    .annonce-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+    }
+    .annonce-card .card-title {
+        font-size: 1.05rem;
+    }
+    .annonce-card .card-text {
+        color: #555;
+        line-height: 1.6;
+    }
+    .filtres .btn {
+        border-radius: 20px;
+        padding: 4px 16px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .filtres .btn:hover {
+        transform: scale(1.03);
+    }
+    .border-start-4 {
+        border-left-width: 4px !important;
+    }
+    .cible-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    @media (max-width: 576px) {
+        .annonce-card .card-title {
+            font-size: 0.95rem;
+        }
+        .filtres .btn {
+            padding: 3px 10px;
+            font-size: 0.75rem;
+        }
+        .annonce-card .cible-badge {
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if current_user.role in ('super_admin', 'school_admin') %}
+<div class="mb-3">
+    <a href="{{ url_for('communication.create_annonce', school_id=school_id) }}" class="btn btn-primary">
+        <i class="bi bi-megaphone me-1"></i> Nouvelle annonce
+    </a>
+</div>
+{% endif %}
+
+<!-- Filtres -->
+<div class="filtres mb-4 d-flex flex-wrap gap-2">
+    <a href="?filter=all" class="btn btn-sm {% if filter_priorite == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        📋 Toutes
+    </a>
+    <a href="?filter=normale" class="btn btn-sm {% if filter_priorite == 'normale' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+        🔵 Normales
+    </a>
+    <a href="?filter=importante" class="btn btn-sm {% if filter_priorite == 'importante' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+        🟠 Importantes
+    </a>
+    <a href="?filter=urgente" class="btn btn-sm {% if filter_priorite == 'urgente' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+        🔴 Urgentes
+    </a>
+</div>
+
+{% if annonces %}
+{% for a in annonces %}
+<div class="card annonce-card mb-3 shadow-sm border-start border-start-4
+    {% if a.priorite == 'urgente' %}border-danger
+    {% elif a.priorite == 'importante' %}border-warning
+    {% else %}border-success{% endif %}">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <h5 class="card-title mb-1">
+                <span class="me-1">
+                    {% if a.priorite == 'urgente' %}🔴
+                    {% elif a.priorite == 'importante' %}🟠
+                    {% else %}🔵{% endif %}
+                </span>
+                {{ a.titre }}
+                {% if a.fichier_joint %}
+                <a href="{{ url_for('communication.download_annonce_file', annonce_id=a.id) }}"
+                   class="text-secondary ms-1" title="Télécharger: {{ a.fichier_joint_nom }}"
+                   onclick="event.stopPropagation()">
+                    <i class="bi bi-paperclip"></i>
+                </a>
+                {% endif %}
+            </h5>
+            <span class="badge cible-badge
+                {% if a.is_global %}bg-info text-dark
+                {% elif a.target_user_ids_list %}bg-primary
+                {% elif a.target_roles_list %}bg-secondary
+                {% else %}bg-success{% endif %}">
+                {% if a.is_global %}
+                    🌍 Tous
+                {% elif a.target_user_ids_list %}
+                    👤 Personnel
+                {% elif a.target_roles_list %}
+                    👥 Rôle
+                {% else %}
+                    🏫 Classe
+                {% endif %}
+            </span>
+        </div>
+
+        <p class="text-muted small mb-2">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ a.created_at|date_fr('%A %d %B %Y à %H:%M') }}
+            &mdash;
+            <i class="bi bi-person me-1"></i>
+            Publié par <strong>{{ a.author.nom_complet }}</strong>
+        </p>
+
+        <p class="card-text">
+            {{ a.contenu[:150] }}{% if a.contenu|length > 150 %}...{% endif %}
+        </p>
+
+        <div class="d-flex justify-content-between align-items-center">
+            {% if a.contenu|length > 150 %}
+            <a href="{{ url_for('communication.detail_annonce', annonce_id=a.id, school_id=school_id) }}"
+               class="btn btn-sm btn-outline-primary">
+                Lire la suite <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+            {% else %}
+            <span></span>
+            {% endif %}
+
+            {% if current_user.role in ('super_admin', 'school_admin') %}
+            <form method="POST" action="{{ url_for('communication.delete_annonce', annonce_id=a.id, school_id=school_id) }}"
+                  onsubmit="return confirm('Supprimer cette annonce ?');" class="d-inline">
+                <button class="btn btn-sm btn-outline-danger" title="Supprimer">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center py-5">
+    <div class="text-muted mb-3" style="font-size: 3rem;">
+        <i class="bi bi-megaphone"></i>
+    </div>
+    <h5 class="text-muted">Aucune annonce</h5>
+    <p class="text-muted small">
+        {% if filter_priorite != 'all' %}
+            Aucune annonce de priorité « {{ filter_priorite }} » pour le moment.
+        {% else %}
+            Aucune annonce pour le moment.
+        {% endif %}
+    </p>
+</div>
+{% endif %}
+{% endblock %}

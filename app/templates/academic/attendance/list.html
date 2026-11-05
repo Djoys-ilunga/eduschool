@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Absences & Retards - EduSchool{% endblock %}
+{% block page_title %}Absences & Retards{% endblock %}
+
+{% block content %}
+<!-- Filtre par annee et classe -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small">Année</label>
+                <select name="year_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for y in all_years %}
+                    <option value="{{ y.id }}" {% if year_id == y.id %}selected{% endif %}>
+                        {{ y.nom }} {% if y.statut == 'active' %}(Active){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Classe</label>
+                <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Toutes les classes</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('academic.list_attendance', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">Reinitialiser</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Formulaire d'ajout rapide -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Marquer une absence</h6>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('academic.add_attendance') }}" class="row g-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="col-md-3">
+                <label class="form-label small">Eleve</label>
+                <select name="student_profile_id" class="form-select form-select-sm" required>
+                    <option value="">-- Selectionner --</option>
+                    {% for student in students %}
+                    <option value="{{ student.student_profile.id if student.student_profile else '' }}">
+                        {{ student.nom_complet }}
+                        {% if student.student_profile and student.student_profile.matricule %}
+                        ({{ student.student_profile.matricule }})
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Date</label>
+                <input type="date" name="date" class="form-control form-control-sm" value="{{ today.strftime('%Y-%m-%d') if today else '' }}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Type</label>
+                <select name="type" class="form-select form-select-sm" required>
+                    <option value="absence">Absence</option>
+                    <option value="retard">Retard</option>
+                    <option value="exclusion">Exclusion</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Motif</label>
+                <input type="text" name="motif" class="form-control form-control-sm" placeholder="Optionnel">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-check-lg me-1"></i> Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des absences -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ attendances|length }} absence{{ 's' if attendances|length != 1 }}</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if attendances %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Eleve</th>
+                        <th>Classe</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Justifie ?</th>
+                        <th>Motif</th>
+                        <th>Enregistre par</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for att in attendances %}
+                    <tr>
+                        <td>
+                            <strong>{{ att.student_profile.user.nom_complet if att.student_profile else '--' }}</strong>
+                            {% if att.student_profile and att.student_profile.matricule %}
+                            <br><small class="text-muted">{{ att.student_profile.matricule }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ att.classe.nom if att.classe else '--' }}</td>
+                        <td>{{ att.date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if att.type == 'absence' %}
+                            <span class="badge bg-danger">Absence</span>
+                            {% elif att.type == 'retard' %}
+                            <span class="badge bg-warning text-dark">Retard</span>
+                            {% elif att.type == 'exclusion' %}
+                            <span class="badge bg-dark">Exclusion</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ att.type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if att.justifie %}
+                            <span class="badge bg-success">Justifie</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark">Non justifie</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ att.motif or '--' }}</small></td>
+                        <td><small>{{ att.auteur.nom_complet if att.auteur else '--' }}</small></td>
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('academic.toggle_attendance', attendance_id=att.id) }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Marquer comme {{ 'non justifie' if att.justifie else 'justifie' }}">
+                                    <i class="bi {% if att.justifie %}bi-toggle-off{% else %}bi-toggle-on{% endif %}"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('academic.delete_attendance', attendance_id=att.id) }}" class="d-inline" onsubmit="return confirm('Supprimer cette absence ?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info m-3">
+            <i class="bi bi-info-circle me-2"></i>
+            Aucune absence enregistree.
+            {% if class_id %}Essayez avec toutes les classes.{% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

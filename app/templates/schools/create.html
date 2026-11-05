@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier' if ecole else 'Nouvelle' }} école - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + ecole.nom if ecole else 'Créer une école' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+
+            <!-- SECTION 1 : Informations générales -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Informations générales</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Ex: Lycée Technique de Kinshasa") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.code.label(class="form-label") }}
+                            {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else ""), placeholder="Ex: LTK") }}
+                            {% if form.code.errors %}<div class="invalid-feedback">{{ form.code.errors[0] }}</div>{% endif %}
+                            <small class="text-muted">Code unique pour identifier l'école</small>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.type_ecole.label(class="form-label") }}
+                            {{ form.type_ecole(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Logo</label>
+                            {{ form.logo(class="form-control") }}
+                            {% if ecole and ecole.logo %}
+                            <small class="text-muted">Logo actuel : {{ ecole.logo }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2 : Adresse -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Adresse</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {{ form.adresse.label(class="form-label") }}
+                            {{ form.adresse(class="form-control", placeholder="Ex: 123, Avenue de l'École") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.ville.label(class="form-label") }}
+                            {{ form.ville(class="form-control", placeholder="Ex: Kinshasa") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.pays.label(class="form-label") }}
+                            {{ form.pays(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3 : Contact -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Contact</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.telephone.label(class="form-label") }}
+                            {{ form.telephone(class="form-control", placeholder="Ex: +243 812 345 678") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="ecole@exemple.com") }}
+                            {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.site_web.label(class="form-label") }}
+                            {{ form.site_web(class="form-control", placeholder="https://...") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4 : Configuration -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Configuration</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.devise.label(class="form-label") }}
+                            {{ form.devise(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.langue.label(class="form-label") }}
+                            {{ form.langue(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.fuseau_horaire.label(class="form-label") }}
+                            {{ form.fuseau_horaire(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5 : Abonnement -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Plan d'abonnement</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.plan_id.label(class="form-label") }}
+                            {{ form.plan_id(class="form-select" + (" is-invalid" if form.plan_id.errors else "")) }}
+                            {% if form.plan_id.errors %}<div class="invalid-feedback">{{ form.plan_id.errors[0] }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('schools.list') }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sidebar d'aide -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">ℹ️ Aide</h6></div>
+            <div class="card-body small">
+                <p class="mb-1"><strong>Nom :</strong> Nom complet de l'établissement.</p>
+                <p class="mb-1"><strong>Code :</strong> Abréviation unique (2-20 caractères).</p>
+                <p class="mb-1"><strong>Devise :</strong> Monnaie utilisée pour la facturation.</p>
+                <p class="mb-1"><strong>Plan :</strong> Détermine les limites (élèves, enseignants) et les fonctionnalités disponibles.</p>
+                <hr>
+                <p class="mb-0 text-muted">Tous les champs marqués d'un astérisque (*) sont obligatoires.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

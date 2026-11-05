@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Nouveau devoir - EduSchool{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('academic.devoirs_list') }}">Devoirs</a></li>
+            <li class="breadcrumb-item active">Nouveau</li>
+        </ol>
+    </nav>
+
+    <h4 class="mb-4"><i class="bi bi-plus-circle me-2"></i>Nouveau devoir</h4>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ _csrf() }}
+
+                        <div class="mb-3">
+                            <label class="form-label">Titre <span class="text-danger">*</span></label>
+                            <input type="text" name="titre" class="form-control" placeholder="Ex: Exercices chapitre 3" required maxlength="200">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="4" placeholder="Consignes du devoir..."></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Classe <span class="text-danger">*</span></label>
+                                <select name="class_id" class="form-select" id="classSelect" required>
+                                    <option value="">-- Choisir --</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Matière</label>
+                                <select name="subject_id" class="form-select" id="subjectSelect">
+                                    <option value="">-- Choisir une classe d'abord --</option>
+                                    {% for cs_item in all_class_subjects %}
+                                    <option value="{{ cs_item.subject_id }}" data-class="{{ cs_item.class_id }}" style="display:none">
+                                        {{ cs_item.subject_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Date limite <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="date_limite" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Note max (optionnel)</label>
+                                <input type="number" name="max_points" class="form-control" placeholder="Ex: 20" step="0.5" min="0">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Fichier joint (énoncé)</label>
+                            <input type="file" name="fichier_joint" class="form-control" accept=".pdf,.docx,.xlsx,.pptx,.jpg,.png,.zip">
+                            <small class="text-muted">PDF, DOCX, XLSX, images. Max 16 MB.</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="authorise_retard" value="1" id="cbRetard" class="form-check-input">
+                            <label class="form-check-label" for="cbRetard">Accepter les soumissions en retard</label>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Publier le devoir
+                            </button>
+                            <a href="{{ url_for('academic.devoirs_list') }}" class="btn btn-outline-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('classSelect').addEventListener('change', function() {
+    var classId = this.value;
+    var opts = document.getElementById('subjectSelect').options;
+    // Masquer toutes les options sauf la premiere
+    for (var i = 1; i < opts.length; i++) {
+        opts[i].style.display = (opts[i].getAttribute('data-class') === classId) ? '' : 'none';
+    }
+    // Reinitialiser la selection
+    opts[0].selected = true;
+    opts[0].textContent = classId ? '-- Choisir --' : "-- Choisir une classe d'abord --";
+});
+</script>
+{% endblock %}

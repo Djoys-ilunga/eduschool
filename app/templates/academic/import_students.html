@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Import Élèves — EduSchool{% endblock %}
+{% block page_title %}Import en Masse d'Élèves{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+{# --- ÉTAPE 1: UPLOAD --- #}
+{% if not preview %}
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📥 Importer des élèves</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('academic.import_students', school_id=school_id) }}">
+                    {{ _csrf() }}
+
+                    <div class="alert alert-info">
+                        <strong>Année scolaire active :</strong> {{ annee.nom }}<br>
+                        <small>Les élèves seront inscrits dans cette année.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fichier (Excel .xlsx ou .csv)</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                        <div class="form-text">Format accepté : .xlsx, .xls, .csv — Taille max 10 MB</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Classe par défaut <small class="text-muted">(si absente du fichier)</small></label>
+                        <select name="default_class_id" class="form-select">
+                            <option value="">— Aucune —</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}">{{ c.nom }} {% if c.niveau %}({{ c.niveau }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Mot de passe par défaut <small class="text-muted">(élèves + parents)</small></label>
+                        <input type="text" name="default_password" class="form-control" 
+                               placeholder="Laissez vide pour mots de passe aléatoires">
+                        <div class="form-text">Même mot de passe pour tous les comptes créés. Ex: Ecole2026</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Analyser le fichier
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">📋 Template</h5>
+            </div>
+            <div class="card-body">
+                <p>Téléchargez le fichier modèle, remplissez-le avec vos données :</p>
+                <a href="{{ url_for('academic.download_import_template', school_id=school_id) }}" class="btn btn-success btn-lg w-100 mb-3">
+                    📥 Télécharger le Template Excel
+                </a>
+
+                <h6 class="mt-3">Colonnes du template :</h6>
+                <table class="table table-sm table-bordered small">
+                    <thead class="table-light">
+                        <tr><th>Colonne</th><th>Obligatoire</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Matricule</td><td>❌ Auto si vide</td></tr>
+                        <tr><td>Nom élève</td><td>✅</td></tr>
+                        <tr><td>Prénom élève</td><td>✅</td></tr>
+                        <tr><td>Date naissance</td><td>❌</td></tr>
+                        <tr><td>Sexe (M/F)</td><td>❌</td></tr>
+                        <tr><td>Classe</td><td>✅</td></tr>
+                        <tr><td>Adresse</td><td>❌</td></tr>
+                        <tr><td>Email élève</td><td>❌ (sinon login = matricule)</td></tr>
+                        <tr><td>Nom parent</td><td>❌ (Compte créé si présent)</td></tr>
+                        <tr><td>Prénom parent</td><td>❌</td></tr>
+                        <tr><td>Téléphone parent</td><td>❌</td></tr>
+                        <tr><td>Email parent</td><td>❌</td></tr>
+                        <tr><td>Lien (père/mère/tuteur)</td><td>❌</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="alert alert-warning small mb-0">
+                    <strong>⚠️ Important :</strong> Le nom de la classe doit correspondre <em>exactement</em> 
+                    à celui dans le système (ex: "6ème A", "5ème B").
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- ÉTAPE 2: PRÉVISUALISATION --- #}
+{% elif preview and not credentials %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">🔍 Prévisualisation de l'import — {{ preview.total }} lignes analysées</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h2>{{ preview.new_students|length }}</h2>
+                                <small>Nouveaux élèves</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h2>{{ preview.existing_students|length }}</h2>
+                                <small>Élèves existants</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body text-center">
+                                <h2>{{ preview.new_parents }}</h2>
+                                <small>Comptes parents à créer</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h2>{{ preview.errors|length }}</h2>
+                                <small>Erreurs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if preview.classes_not_found %}
+                <div class="alert alert-danger">
+                    <strong>Classes introuvables :</strong>
+                    {% for cn in preview.classes_not_found %}
+                        <span class="badge bg-danger me-1">{{ cn }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Erreurs -->
+                {% if preview.errors %}
+                <div class="alert alert-danger">
+                    <strong>{{ preview.errors|length }} erreur(s) :</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for err in preview.errors[:20] %}
+                        <li>{{ err }}</li>
+                        {% endfor %}
+                        {% if preview.errors|length > 20 %}
+                        <li>... et {{ preview.errors|length - 20 }} autres</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Nouveaux élèves -->
+                {% if preview.new_students %}
+                <h6 class="mt-3">🆕 Nouveaux élèves ({{ preview.new_students|length }})</h6>
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-bordered small">
+                        <thead class="table-success">
+                            <tr>
+                                <th>#</th><th>Nom</th><th>Prénom</th><th>Matricule</th>
+                                <th>Email</th><th>Classe</th><th>Parent</th><th>Tél parent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in preview.new_students[:50] %}
+                            <tr>
+                                <td>{{ s.row }}</td>
+                                <td>{{ s.nom }}</td>
+                                <td>{{ s.prenom }}</td>
+                                <td><code>{{ s.matricule or '(auto)' }}</code></td>
+                                <td>{{ s.email_eleve or '(matricule)' }}</td>
+                                <td>{{ s.classe }}</td>
+                                <td>{{ s.nom_parent }} {{ s.prenom_parent }}</td>
+                                <td>{{ s.tel_parent }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if preview.new_students|length > 50 %}
+                            <tr><td colspan="8" class="text-center text-muted">... et {{ preview.new_students|length - 50 }} autres</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Élèves existants -->
+                {% if preview.existing_students %}
+                <h6 class="mt-3">📋 Élèves existants ({{ preview.existing_students|length }})</h6>
+                <div class="table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-bordered small">
+                        <thead class="table-info">
+                            <tr>
+                                <th>#</th><th>Nom</th><th>Prénom</th><th>Matricule</th>
+                                <th>Classe fichier</th><th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in preview.existing_students[:50] %}
+                            <tr>
+                                <td>{{ s.row }}</td>
+                                <td>{{ s.nom }}</td>
+                                <td>{{ s.prenom }}</td>
+                                <td>{{ s.matricule }}</td>
+                                <td>{{ s.classe }}</td>
+                                <td>
+                                    {% if s.status == 'deja_inscrit' %}
+                                    <span class="badge bg-secondary">Déjà inscrit</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Changement de classe</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Boutons -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('academic.import_students', school_id=school_id) }}" class="btn btn-outline-secondary">
+                        ← Annuler
+                    </a>
+                    {% if not preview.errors or preview.new_students %}
+                    <form method="POST" enctype="multipart/form-data" 
+                          action="{{ url_for('academic.import_students', school_id=school_id) }}">
+                        {{ _csrf() }}
+                        <input type="hidden" name="confirm" value="1">
+                        <input type="hidden" name="default_password" value="{{ request.form.get('default_password', '') }}">
+                        <button type="submit" class="btn btn-success btn-lg" 
+                                {% if preview.errors %}disabled{% endif %}>
+                            ✅ Confirmer l'import ({{ preview.new_students|length }} élèves)
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- ÉTAPE 3: RÉSULTAT (CREDENTIALS) --- #}
+{% elif credentials %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">✅ Import réussi — Identifiants générés</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <strong>{{ preview.new_students|length }} élèves importés</strong> avec leurs comptes.
+                    <br>Conservez ces identifiants pour les distribuer.
+                </div>
+
+                <div class="mb-3">
+                    <button class="btn btn-primary me-2" onclick="window.print()">🖨️ Imprimer</button>
+                    <button class="btn btn-outline-secondary me-2" onclick="copyCredentials()">📋 Copier</button>
+                    <a href="{{ url_for('academic.import_students', school_id=school_id) }}" class="btn btn-outline-primary">
+                        Nouvel import
+                    </a>
+                </div>
+
+                <div class="table-responsive" id="credentials-table">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Type</th>
+                                <th>Nom</th>
+                                <th>Login</th>
+                                <th>Mot de passe</th>
+                                <th>Classe / Enfant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in credentials %}
+                            <tr>
+                                <td>
+                                    {% if c.type == 'eleve' %}
+                                    <span class="badge bg-primary">Élève</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Parent</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ c.nom }}</td>
+                                <td><code>{{ c.login }}</code></td>
+                                <td><code class="text-danger">{{ c.password }}</code></td>
+                                <td>{{ c.classe or c.enfant }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyCredentials() {
+    let text = '';
+    document.querySelectorAll('#credentials-table tbody tr').forEach(row => {
+        let cells = row.querySelectorAll('td');
+        text += `${cells[0].innerText.trim()}\t${cells[1].innerText.trim()}\t${cells[2].innerText.trim()}\t${cells[3].innerText.trim()}\t${cells[4].innerText.trim()}\n`;
+    });
+    navigator.clipboard.writeText(text).then(() => alert('Identifiants copiés !'));
+}
+</script>
+
+{% endif %}
+
+</div>
+
+<style>
+@media print {
+    .btn, .navbar, .sidebar, .breadcrumb { display: none !important; }
+    .card { border: none !important; }
+}
+</style>
+{% endblock %}

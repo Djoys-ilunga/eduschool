@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Restauration Base de données - EduSchool{% endblock %}
+{% block page_title %}Restauration de la base de données{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-upload me-2"></i>Restaurer depuis un fichier .db
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Attention :</strong> Cette opération remplacera toutes les données actuelles.
+                    Une sauvegarde automatique de la base actuelle sera créée avant la restauration.
+                </div>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="db_file" class="form-label">Fichier de sauvegarde (.db)</label>
+                        <input type="file" class="form-control" id="db_file" name="db_file"
+                               accept=".db" required>
+                        <div class="form-text">
+                            Sélectionnez un fichier SQLite valide contenant les tables de l'application.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-1"></i> Restaurer
+                    </button>
+                    <a href="{{ url_for('admin.backup_database') }}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-download me-1"></i> Télécharger la sauvegarde actuelle
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

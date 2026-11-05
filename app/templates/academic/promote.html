@@ -1,0 +1,671 @@
+{% extends "base.html" %}
+{% block title %}Passation d'année - EduSchool{% endblock %}
+{% block page_title %}Passation d'année scolaire{% endblock %}
+
+{% block extra_head %}
+<style>
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .step-indicator::before {
+        content: '';
+        position: absolute;
+        top: 18px;
+        left: 10%;
+        right: 10%;
+        height: 3px;
+        background: #dee2e6;
+        z-index: 0;
+    }
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        flex: 1;
+    }
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #dee2e6;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 0.4rem;
+        transition: all 0.3s;
+    }
+    .step-circle.active {
+        background: #2B579A;
+        color: white;
+    }
+    .step-circle.done {
+        background: #198754;
+        color: white;
+    }
+    .step-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-align: center;
+        max-width: 90px;
+    }
+    .mapping-table th {
+        font-size: 0.85rem;
+    }
+    .mapping-arrow {
+        font-size: 1.5rem;
+        color: #2B579A;
+    }
+    .class-count {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .summary-card {
+        border-left: 4px solid #198754;
+    }
+    .option-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        transition: border-color 0.2s;
+    }
+    .option-card:hover {
+        border-color: #2B579A;
+    }
+    .option-card .form-check-input:checked {
+        background-color: #2B579A;
+        border-color: #2B579A;
+    }
+    .fade-out {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    #progress-container {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+
+        <!-- Steps indicator -->
+        <div class="step-indicator" id="step-indicator">
+            <div class="step-item">
+                <div class="step-circle active" id="step-1-circle">1</div>
+                <div class="step-label">Année<br>destination</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle" id="step-2-circle">2</div>
+                <div class="step-label">Classes &<br>mapping</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle" id="step-3-circle">3</div>
+                <div class="step-label">Élèves &<br>promotion</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle" id="step-4-circle">4</div>
+                <div class="step-label">Matières &<br>frais</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle" id="step-5-circle">5</div>
+                <div class="step-label">Exécution</div>
+            </div>
+        </div>
+
+        <!-- Progress bar (shown during execution) -->
+        <div class="progress mb-4" id="progress-container" style="height: 8px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 id="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+
+        <form method="POST" id="promote-form" onsubmit="return confirmSubmit()">
+            {{ _csrf() }}
+
+            <!-- ============================================================ -->
+            <!-- STEP 1: Annee source & destination -->
+            <!-- ============================================================ -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Étape 1 : Année source et destination</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Source Year -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-box-arrow-right me-1"></i> Année source
+                            </label>
+                            <select name="source_year_id" id="source_year_id" class="form-select" required
+                                    onchange="this.form.method='GET'; this.form.submit();">
+                                <option value="">-- Choisir une année --</option>
+                                {% for y in years %}
+                                <option value="{{ y.id }}" {% if y.id == source_year_id %}selected{% endif %}>
+                                    {{ y.nom }}
+                                    {% if y.statut == 'active' %}(Active){% elif y.statut in ('closee', 'close') %}(Clôturée){% else %}(Archivée){% endif %}
+                                    — {{ y.classes|length }} classes
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if source_year_id %}
+                            <div class="mt-2">
+                                <span class="badge bg-info">
+                                    <i class="bi bi-people me-1"></i>
+                                    {{ class_mapping|sum(attribute='enrollment_count') }} élèves actifs
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Destination Year -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Année destination
+                            </label>
+
+                            <!-- Option 1: Existing year -->
+                            <div class="mb-2">
+                                <select name="dest_year_id" id="dest_year_id" class="form-select"
+                                        onchange="toggleDestYearMode(this.value)">
+                                    <option value="">-- Créer une nouvelle année --</option>
+                                    {% for y in years %}
+                                    {% if y.id != source_year_id %}
+                                    <option value="{{ y.id }}">
+                                        {{ y.nom }}
+                                        {% if y.statut == 'active' %}(Active){% elif y.statut in ('closee', 'close') %}(Clôturée){% else %}(Archivée){% endif %}
+                                    </option>
+                                    {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Option 2: Create new -->
+                            <div id="new-year-fields">
+                                <div class="option-card">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="create_year" value="1"
+                                               id="create_year" checked onchange="toggleNewYearFields()">
+                                        <label class="form-check-label fw-semibold" for="create_year">
+                                            Créer une nouvelle année scolaire
+                                        </label>
+                                    </div>
+                                    <div class="row g-2 mt-2" id="new-year-details">
+                                        <div class="col-md-6">
+                                            <label class="form-label small">Nom</label>
+                                            <input type="text" name="dest_year_name" id="dest_year_name"
+                                                   class="form-control form-control-sm"
+                                                   placeholder="ex: 2026-2027"
+                                                   value="{{ suggested_next_year }}">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Date début</label>
+                                            <input type="date" name="dest_year_start" id="dest_year_start"
+                                                   class="form-control form-control-sm">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Date fin</label>
+                                            <input type="date" name="dest_year_end" id="dest_year_end"
+                                                   class="form-control form-control-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if class_mapping %}
+            <!-- ============================================================ -->
+            <!-- STEP 2: Classes mapping -->
+            <!-- ============================================================ -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Étape 2 : Mapping des classes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mapping-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" id="select-all-classes" checked
+                                               onchange="toggleAllClasses(this)">
+                                    </th>
+                                    <th>Classe source</th>
+                                    <th style="width: 60px;"></th>
+                                    <th>Classe destination</th>
+                                    <th>Niveau</th>
+                                    <th>Élèves</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in class_mapping %}
+                                <tr id="row-{{ m.source_class.id }}">
+                                    <td>
+                                        <input type="checkbox" name="include_class" value="{{ m.source_class.id }}"
+                                               class="class-checkbox" checked
+                                               onchange="updateRowStyle(this, {{ m.source_class.id }})">
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold">{{ m.source_name }}</span>
+                                        {% if m.source_level %}
+                                        <span class="badge bg-secondary ms-1">{{ m.source_level }}</span>
+                                        {% endif %}
+                                        <br><small class="class-count">{{ m.enrollment_count }} élève(s)</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="mapping-arrow">→</span>
+                                    </td>
+                                    <td>
+                                        {% if m.is_terminale %}
+                                        <span class="badge bg-dark">📦 Terminale</span>
+                                        <input type="hidden" name="terminal_class" value="{{ m.source_class.id }}">
+                                        <input type="hidden" name="dest_name_{{ m.source_class.id }}" value="{{ m.dest_name }}">
+                                        <small class="text-muted d-block">Pas de niveau superieur — choix individuels ci-dessous</small>
+                                        {% else %}
+                                        <select name="dest_name_{{ m.source_class.id }}"
+                                               class="form-select form-select-sm dest-name-input">
+                                            {% set dest_suggestion = m.dest_name %}
+                                            <option value="{{ dest_suggestion }}" selected>
+                                                {{ dest_suggestion }} (suggéré)
+                                            </option>
+                                            <option disabled>--- Classes existantes ---</option>
+                                            {% for ec in all_school_classes %}
+                                            {% if ec.id != m.source_class.id %}
+                                            <option value="{{ ec.nom }}">
+                                                {{ ec.nom }}
+                                                {% if ec.niveau %}[{{ ec.niveau }}]{% endif %}
+                                            </option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if m.is_terminale %}
+                                        <span class="badge bg-info">Fin d'études</span>
+                                        {% elif m.dest_level %}
+                                        <span class="badge bg-success">{{ m.dest_level }}</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">Inchangé</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ m.enrollment_count }}</span>
+                                        {% if m.repeat_candidates > 0 %}
+                                        <br><small class="text-warning">{{ m.repeat_candidates }} redoublant(s)</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- STEP 3: Promotion configuration -->
+            <!-- ============================================================ -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Étape 3 : Options de promotion</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="option-card">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="duplicate_classes"
+                                           value="1" id="dup_classes" checked>
+                                    <label class="form-check-label fw-semibold" for="dup_classes">
+                                        <i class="bi bi-files me-1"></i> Dupliquer les classes
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Crée les classes sélectionnées dans l'année destination
+                                </small>
+                            </div>
+
+                            <div class="option-card">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="promote_students"
+                                           value="1" id="promote_students" checked>
+                                    <label class="form-check-label fw-semibold" for="promote_students">
+                                        <i class="bi bi-arrow-up-circle me-1"></i> Promouvoir les élèves
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Monte les élèves d'un niveau (6ème→5ème, 5ème→4ème, etc.).
+                                    Cochez "Redouble" par élève si nécessaire.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="option-card">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="duplicate_subjects"
+                                           value="1" id="dup_subjects" checked>
+                                    <label class="form-check-label fw-semibold" for="dup_subjects">
+                                        <i class="bi bi-book me-1"></i> Dupliquer les matières
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Copie les associations classe-matière (coefficients, enseignants)
+                                </small>
+                            </div>
+
+                            <div class="option-card">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="duplicate_fees"
+                                           value="1" id="dup_fees" checked>
+                                    <label class="form-check-label fw-semibold" for="dup_fees">
+                                        <i class="bi bi-cash-stack me-1"></i> Dupliquer les frais scolaires
+                                    </label>
+                                </div>
+                                <small class="text-muted ms-4">
+                                    Copie les montants des frais (minerval, assurances, etc.)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redoublement: liste des eleves par classe -->
+                    <div class="mt-4" id="repeat-section">
+                        <h6 class="border-bottom pb-2">
+                            <i class="bi bi-person-dash me-1"></i> Élèves à faire redoubler
+                            <small class="text-muted">(cochez les élèves qui doivent rester dans le même niveau)</small>
+                        </h6>
+                        {% for m in class_mapping %}
+                        {% if not m.is_terminale %}
+                        <div class="card mb-2 repeat-class-card" data-source-class="{{ m.source_class.id }}">
+                            <div class="card-header py-2 bg-light">
+                                <strong>{{ m.source_name }}</strong>
+                                <span class="badge bg-secondary ms-2">{{ m.enrollment_count }} élève(s)</span>
+                            </div>
+                            <div class="card-body py-2">
+                                {% set sc = m.source_class %}
+                                {% set enrollments = sc.eleves_inscrits|selectattr('statut', 'equalto', 'actif')|list %}
+                                {% if enrollments %}
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
+                                    {% for enr in enrollments %}
+                                    {% set sp = enr.student_profile %}
+                                    {% if sp and sp.user %}
+                                    <div class="col">
+                                        <div class="form-check">
+                                            <input class="form-check-input repeat-checkbox" type="checkbox"
+                                                   name="repeat_{{ sp.id }}" value="1"
+                                                   id="repeat_{{ sp.id }}">
+                                            <label class="form-check-label small" for="repeat_{{ sp.id }}">
+                                                {{ sp.user.prenom }} {{ sp.user.nom }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <small class="text-muted">Aucun élève actif dans cette classe.</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+
+                        <!-- Classes terminales: gestion des finalistes -->
+                        {% set has_terminale = class_mapping|selectattr('is_terminale', 'equalto', true)|list %}
+                        {% if has_terminale %}
+                        <h6 class="border-bottom pb-2 mt-4">
+                            <i class="bi bi-mortarboard me-1"></i> Élèves finalistes (Terminale)
+                            <small class="text-muted">(cochés = ne passe pas / redouble | décocher = diplômé)</small>
+                        </h6>
+                        {% for m in class_mapping %}
+                        {% if m.is_terminale %}
+                        <div class="card mb-2 border-dark" data-source-class="{{ m.source_class.id }}">
+                            <div class="card-header py-2" style="background: #2c3e50; color: white;">
+                                <strong>{{ m.source_name }}</strong>
+                                <span class="badge bg-light text-dark ms-2">{{ m.enrollment_count }} finaliste(s)</span>
+                            </div>
+                            <div class="card-body py-2">
+                                {% set sc = m.source_class %}
+                                {% set enrollments = sc.eleves_inscrits|selectattr('statut', 'equalto', 'actif')|list %}
+                                {% if enrollments %}
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
+                                    {% for enr in enrollments %}
+                                    {% set sp = enr.student_profile %}
+                                    {% if sp and sp.user %}
+                                    <div class="col">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="fail_{{ sp.id }}" value="1"
+                                                   id="fail_{{ sp.id }}">
+                                            <label class="form-check-label small" for="fail_{{ sp.id }}">
+                                                {{ sp.user.prenom }} {{ sp.user.nom }}
+                                                <span class="text-success">(passe)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <small class="text-muted">Aucun élève actif dans cette classe.</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- STEP 5: Execute -->
+            <!-- ============================================================ -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>Étape 4 : Lancer la passation</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-3">
+                        Cette action va :
+                        <span id="summary-classes">dupliquer les classes</span>,
+                        <span id="summary-students">promouvoir les élèves</span>,
+                        <span id="summary-subjects">copier les matières</span> et
+                        <span id="summary-fees">copier les frais</span>.
+                    </p>
+                    <p class="text-warning small">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Toutes les opérations sont transactionnelles : en cas d'erreur, rien n'est modifié.
+                    </p>
+                    <button type="submit" class="btn btn-success btn-lg px-5" id="submit-btn">
+                        <i class="bi bi-rocket-takeoff me-2"></i> Lancer la passation
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <!-- No source year selected -->
+            <div class="card mb-4">
+                <div class="card-body text-center py-5 text-muted">
+                    <i class="bi bi-arrow-up-circle display-3 d-block mb-3"></i>
+                    <h5>Sélectionnez une année source</h5>
+                    <p>Choisissez l'année scolaire de départ pour voir les classes à promouvoir.</p>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+
+        <div class="mt-3">
+            <a href="{{ url_for('academic.list_years', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Retour aux années scolaires
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Toggle destination year mode
+function toggleDestYearMode(value) {
+    var newFields = document.getElementById('new-year-fields');
+    var createCheckbox = document.getElementById('create_year');
+    if (value) {
+        newFields.style.opacity = '0.4';
+        newFields.style.pointerEvents = 'none';
+        createCheckbox.checked = false;
+        document.getElementById('new-year-details').style.display = 'none';
+    } else {
+        newFields.style.opacity = '1';
+        newFields.style.pointerEvents = 'auto';
+        createCheckbox.checked = true;
+        document.getElementById('new-year-details').style.display = 'flex';
+    }
+}
+
+function toggleNewYearFields() {
+    var checked = document.getElementById('create_year').checked;
+    document.getElementById('new-year-details').style.display = checked ? 'flex' : 'none';
+    if (!checked) {
+        document.getElementById('dest_year_id').value = '';
+    }
+}
+
+// Select/deselect all classes
+function toggleAllClasses(checkbox) {
+    document.querySelectorAll('.class-checkbox').forEach(function(cb) {
+        cb.checked = checkbox.checked;
+        var rowId = cb.value;
+        updateRowStyle(cb, rowId);
+    });
+}
+
+function updateRowStyle(checkbox, classId) {
+    var row = document.getElementById('row-' + classId);
+    if (row) {
+        if (checkbox.checked) {
+            row.classList.remove('fade-out');
+        } else {
+            row.classList.add('fade-out');
+        }
+    }
+    updateSummary();
+}
+
+// Update summary text based on checkboxes
+function updateSummary() {
+    var dupClasses = document.getElementById('dup_classes').checked;
+    var promoteStudents = document.getElementById('promote_students').checked;
+    var dupSubjects = document.getElementById('dup_subjects').checked;
+    var dupFees = document.getElementById('dup_fees').checked;
+
+    var anyClassChecked = false;
+    document.querySelectorAll('.class-checkbox').forEach(function(cb) {
+        if (cb.checked) anyClassChecked = true;
+    });
+
+    document.getElementById('summary-classes').textContent =
+        dupClasses && anyClassChecked ? 'dupliquer les classes' : 'ignorer les classes';
+    document.getElementById('summary-students').textContent =
+        promoteStudents ? 'promouvoir les élèves' : 'ignorer les élèves';
+    document.getElementById('summary-subjects').textContent =
+        dupSubjects ? 'copier les matières' : 'ignorer les matières';
+    document.getElementById('summary-fees').textContent =
+        dupFees ? 'copier les frais' : 'ignorer les frais';
+}
+
+// Confirm before submit
+function confirmSubmit() {
+    var sourceYear = document.getElementById('source_year_id');
+    if (!sourceYear || !sourceYear.value) {
+        alert('Veuillez sélectionner une année source.');
+        return false;
+    }
+
+    var destYearId = document.getElementById('dest_year_id').value;
+    var createYear = document.getElementById('create_year').checked;
+    var destName = document.getElementById('dest_year_name').value.trim();
+    var destStart = document.getElementById('dest_year_start').value;
+    var destEnd = document.getElementById('dest_year_end').value;
+
+    if (!destYearId && createYear) {
+        if (!destName) {
+            alert('Veuillez entrer un nom pour la nouvelle année scolaire.');
+            return false;
+        }
+        if (!destStart || !destEnd) {
+            alert('Veuillez entrer les dates de début et de fin.');
+            return false;
+        }
+    }
+    if (!destYearId && !createYear) {
+        alert('Veuillez sélectionner une année destination ou cocher "Créer une nouvelle année".');
+        return false;
+    }
+
+    var msg = '⚠️ Confirmer la passation d\'année ?\n\n';
+    msg += 'Cette action va :\n';
+    if (document.getElementById('dup_classes').checked) msg += '• Dupliquer les classes sélectionnées\n';
+    if (document.getElementById('promote_students').checked) msg += '• Promouvoir les élèves au niveau supérieur\n';
+    if (document.getElementById('dup_subjects').checked) msg += '• Copier les matières et coefficients\n';
+    if (document.getElementById('dup_fees').checked) msg += '• Copier les frais scolaires\n';
+
+    if (createYear) {
+        msg += '\nNouvelle année : ' + destName + ' (' + destStart + ' → ' + destEnd + ')';
+    }
+
+    msg += '\n\nCette opération est irréversible. Continuer ?';
+    return confirm(msg);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-suggest next year name
+    var sourceSelect = document.getElementById('source_year_id');
+    if (sourceSelect && sourceSelect.value) {
+        var selectedOption = sourceSelect.options[sourceSelect.selectedIndex];
+        if (selectedOption) {
+            var yearName = selectedOption.text.split(' ')[0]; // "2025-2026"
+            if (yearName && yearName.match(/^\d{4}-\d{4}$/)) {
+                var parts = yearName.split('-');
+                var nextStart = parseInt(parts[0]) + 1;
+                var nextEnd = parseInt(parts[1]) + 1;
+                var suggestedName = nextStart + '-' + nextEnd;
+                var destNameInput = document.getElementById('dest_year_name');
+                if (destNameInput && !destNameInput.value) {
+                    destNameInput.value = suggestedName;
+                }
+                // Suggest dates
+                var nextYearSept = nextStart + '-09-01';
+                var nextYearJuly = nextEnd + '-07-31';
+                var destStartInput = document.getElementById('dest_year_start');
+                var destEndInput = document.getElementById('dest_year_end');
+                if (destStartInput && !destStartInput.value) destStartInput.value = nextYearSept;
+                if (destEndInput && !destEndInput.value) destEndInput.value = nextYearJuly;
+            }
+        }
+    }
+
+    // Listen to option checkboxes
+    ['dup_classes', 'promote_students', 'dup_subjects', 'dup_fees'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateSummary);
+    });
+
+    // Initial summary update
+    updateSummary();
+});
+</script>
+{% endblock %}

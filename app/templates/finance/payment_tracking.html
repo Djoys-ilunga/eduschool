@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Suivi paiements - EduSchool{% endblock %}
+{% block page_title %}Suivi des paiements par eleve{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <form method="GET" class="row g-2 align-items-end">
+        <div class="col-auto">
+            <label class="form-label small">Classe</label>
+            <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Toutes les classes</option>
+                {% for cl in classes %}
+                <option value="{{ cl.id }}" {% if class_id == cl.id %}selected{% endif %}>{{ cl.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="school_id" value="{{ school_id }}">
+    </form>
+</div>
+
+{% for cs in class_summaries %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>{{ cs.classe.nom }}</h6>
+        <div>
+            <span class="badge bg-success me-1">Paye: {{ cs.stats.paid }}</span>
+            <span class="badge bg-warning me-1">Partiel: {{ cs.stats.partial }}</span>
+            <span class="badge bg-danger">Impaye: {{ cs.stats.unpaid }}</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Eleve</th>
+                        {% for ft in fee_types %}
+                        <th class="text-center">{{ ft.nom }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in cs.rows %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="{{ url_for('students.detail', profile_id=row.profile.id) }}">{{ row.profile.user.nom_complet }}</a>
+                        </td>
+                        {% for fdata in row.fee_data %}
+                        <td class="text-center">
+                            {% if fdata.paid %}
+                            <span class="badge bg-success">Paye</span>
+                            {% elif fdata.partial %}
+                            <span class="badge bg-warning">{{ fdata.paye|int }}/{{ fdata.du|int }} {{ fdata.devise }}</span>
+                            {% elif fdata.defined %}
+                            <span class="badge bg-danger">{{ fdata.du|int }} {{ fdata.devise }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if class_summaries|length == 0 %}
+<div class="alert alert-info">Aucun eleve trouve pour les criteres selectionnes.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Bulletin {{ classe.nom }} - T{{ trimestre }}{% endblock %}
+{% block page_title %}Bulletin {{ classe.nom }} — {{ trimestre }}e{% if trimestre==1 %}r{% endif %} Trimestre{% endblock %}
+
+{% block content %}
+<!-- no-print controls -->
+<div class="no-print d-flex justify-content-between mb-3">
+    <a href="{{ url_for('academic.bulletin_list', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Classes
+    </a>
+    <div>
+        {% for t in [1,2,3] %}
+        <a href="{{ url_for('academic.bulletin_class', class_id=classe.id, trimestre=t, school_id=school_id) }}"
+           class="btn btn-sm {% if t==trimestre %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            T{{ t }}
+        </a>
+        {% endfor %}
+        <a href="{{ url_for('academic.bulletin_print', class_id=classe.id, trimestre=trimestre, school_id=school_id) }}" target="_blank" class="btn btn-sm btn-danger ms-2">
+            <i class="bi bi-file-pdf me-1"></i> PDF
+        </a>
+    </div>
+</div>
+
+<!-- Deliberation summary -->
+<div class="row g-2 mb-3 no-print" id="deliberation-summary">
+    {% set admis = bulletins|selectattr('decision','equalto','Admis')|list|length %}
+    {% set repriser = bulletins|selectattr('decision','equalto','A repriser')|list|length %}
+    {% set redouble = bulletins|selectattr('decision','equalto','Redouble')|list|length %}
+    {% set exclu = bulletins|selectattr('decision','equalto','Exclu')|list|length %}
+    {% set ne = bulletins|selectattr('decision','equalto','Non evalue')|list|length %}
+    <div class="col"><div class="card border-success text-center"><div class="card-body py-2"><h5 class="text-success mb-0">{{ admis }}</h5><small>Admis</small></div></div></div>
+    <div class="col"><div class="card border-warning text-center"><div class="card-body py-2"><h5 class="text-warning mb-0">{{ repriser }}</h5><small>A repriser</small></div></div></div>
+    <div class="col"><div class="card border-danger text-center"><div class="card-body py-2"><h5 class="text-danger mb-0">{{ redouble }}</h5><small>Redouble</small></div></div></div>
+    <div class="col"><div class="card border-dark text-center"><div class="card-body py-2"><h5 class="text-dark mb-0">{{ exclu }}</h5><small>Exclus</small></div></div></div>
+    <div class="col"><div class="card border-secondary text-center"><div class="card-body py-2"><h5 class="text-secondary mb-0">{{ ne }}</h5><small>Non evalues</small></div></div></div>
+</div>
+
+<!-- Bulletin table -->
+<div class="card" id="bulletin-table">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0 bulletin-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th style="min-width:160px">Eleve</th>
+                        {% for cs in cs_list %}
+                        <th class="text-center small" title="{{ cs.subject.nom }} (coef {{ cs.coefficient }})">
+                            {{ cs.subject.nom[:12] }}
+                        </th>
+                        {% endfor %}
+                        <th class="text-center bg-warning bg-opacity-25">Moy.</th>
+                        <th class="text-center">Rang</th>
+                        <th class="text-center">Decision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bulletins %}
+                    <tr>
+                        <td class="text-muted small">{{ loop.index }}</td>
+                        <td>
+                            <strong>{{ b.eleve.nom_complet }}</strong>
+                            <br><small class="text-muted">{{ b.profile.matricule or '' }}</small>
+                        </td>
+                        {% for m in b.matieres %}
+                        <td class="text-center">
+                            {% if m.moyenne is not none %}
+                            <span class="badge bg-{{ 'success' if m.moyenne >= 10 else 'danger' }} bg-opacity-75">
+                                {{ m.moyenne }}
+                            </span>
+                            <br><small class="text-muted">{{ m.nb_notes }} n.</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="text-center fw-bold">
+                            {% if b.moyenne_generale is not none %}
+                            <span class="badge bg-{{ 'success' if b.moyenne_generale >= 10 else 'danger' }} fs-6">
+                                {{ b.moyenne_generale }}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if b.rang %}
+                            <span class="badge bg-light text-dark">{{ b.rang }}/{{ bulletins|length }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ b.decision_class }}">{{ b.decision }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.bulletin-table { font-size: 0.75rem; }
+.bulletin-table td { vertical-align: middle; }
+
+@media print {
+    .sidebar, .navbar, .no-print, footer { display: none !important; }
+    body { margin: 0; padding: 0; }
+    .main-content { margin-left: 0 !important; width: 100% !important; }
+    .bulletin-table { font-size: 0.55rem; }
+    .bulletin-table th, .bulletin-table td { padding: 2px 4px !important; }
+    @page { size: A4 landscape; margin: 8mm; }
+}
+</style>
+{% endblock %}

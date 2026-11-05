@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Conseil de Classe - Deliberations - EduSchool{% endblock %}
+{% block page_title %}Conseil de Classe{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% for classe in classes %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">{{ classe.nom }}</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="list-group list-group-flush">
+                    {% for t in trimesters %}
+                        {% set has_delib = namespace(v=false) %}
+                        {% for d in classe.deliberations %}
+                            {% if d.trimester_id == t.id %}
+                                {% set has_delib.v = true %}
+                            {% endif %}
+                        {% endfor %}
+                        <a href="{{ url_for('academic.deliberation_page', class_id=classe.id, trimester_id=t.id, school_id=school_id) }}"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <span>{{ t.nom }}</span>
+                            {% if has_delib.v %}
+                                <span class="badge bg-success rounded-pill">Delibere</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill">En attente</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Aucune classe trouvee pour l'annee scolaire active.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

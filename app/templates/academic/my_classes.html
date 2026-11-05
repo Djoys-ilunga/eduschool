@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Mes Classes - EduSchool{% endblock %}
+{% block page_title %}Mes Classes{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">{{ matieres|length }} classe(s) avec matiere(s) assignee(s)</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if matieres %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Classe</th>
+                        <th>Matière</th>
+                        <th>Coefficient</th>
+                        <th>Élèves</th>
+                        <th>Heures/sem.</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cs in matieres %}
+                    <tr>
+                        <td>
+                            <strong>{{ cs.classe.nom }}</strong>
+                            {% if cs.classe.niveau %}<br><small class="text-muted">{{ cs.classe.niveau }}{% if cs.classe.section %} — {{ cs.classe.section }}{% endif %}</small>{% endif %}
+                            {% if cs.classe.titulaire_id == current_user.id %}
+                                <span class="badge bg-success ms-1">Titulaire</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ cs.subject.nom }}</td>
+                        <td>{{ cs.coefficient }}</td>
+                        <td>{{ cs.classe.nombre_eleves }}</td>
+                        <td>{{ cs.heures_par_semaine if cs.heures_par_semaine else '—' }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('academic.list_grades', class_id=cs.class_id, class_subject_id=cs.id, school_id=school_id) }}"
+                                   class="btn btn-outline-primary" title="Saisir des notes">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a href="{{ url_for('academic.view_timetable', class_id=cs.class_id, school_id=school_id) }}"
+                                   class="btn btn-outline-info" title="Voir l'emploi du temps">
+                                    <i class="bi bi-calendar-week"></i>
+                                </a>
+                                <a href="{{ url_for('academic.list_attendance', class_id=cs.class_id, school_id=school_id) }}"
+                                   class="btn btn-outline-warning" title="Absences">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-journal-x display-4 d-block mb-3"></i>
+            <p>Aucune matiere assignee pour le moment.</p>
+            <p class="small">Contactez l'administrateur de votre ecole pour l'assignation des matieres.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

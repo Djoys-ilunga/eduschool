@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier ' + student.nom_complet if student else 'Inscription' }} - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + student.nom_complet if student else 'Inscrire un eleve' }}{% endblock %}
+
+{% block content %}
+
+{% if not student %}
+<!-- Indicateur d etapes -->
+<div class="steps-indicator mb-4">
+    <div class="d-flex justify-content-between">
+        <div class="step-item active" data-step="1">
+            <span class="step-circle">1</span>
+            <span class="step-label">Identite</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" data-step="2">
+            <span class="step-circle">2</span>
+            <span class="step-label">Scolarite</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" data-step="3">
+            <span class="step-circle">3</span>
+            <span class="step-label">Sante</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item" data-step="4">
+            <span class="step-circle">4</span>
+            <span class="step-label">Parent</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.steps-indicator { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; border: 1px solid #e9ecef; }
+.step-item { text-align: center; flex: 0 0 auto; min-width: 60px; }
+.step-circle { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #dee2e6; color: #6c757d; font-weight: 700; font-size: 14px; transition: all 0.3s; }
+.step-item.active .step-circle { background: #0d6efd; color: #fff; }
+.step-item.completed .step-circle { background: #198754; color: #fff; }
+.step-label { display: block; font-size: 11px; color: #6c757d; margin-top: 4px; font-weight: 500; }
+.step-item.active .step-label { color: #0d6efd; font-weight: 600; }
+.step-item.completed .step-label { color: #198754; }
+.step-connector { flex: 1; height: 2px; background: #dee2e6; margin-top: 16px; min-width: 20px; }
+.step-connector.completed { background: #198754; }
+</style>
+
+<div class="row">
+    <div class="col-lg-9">
+        <form method="POST" enctype="multipart/form-data" novalidate id="student-form">
+            {{ form.hidden_tag() }}
+
+            <!-- SECTION 1 : Identite -->
+            <div class="card mb-3" data-step-section="1">
+                <div class="card-header">
+                    <h5 class="mb-0"><span class="badge bg-primary me-2">1</span> Identite</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.prenom.label(class="form-label") }}
+                            {{ form.prenom(class="form-control" + (" is-invalid" if form.prenom.errors else ""), placeholder="Prenom") }}
+                            {% if form.prenom.errors %}<div class="invalid-feedback">{{ form.prenom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Nom") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.date_naissance.label(class="form-label") }}
+                            {{ form.date_naissance(class="form-control", type="date") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.lieu_naissance.label(class="form-label") }}
+                            {{ form.lieu_naissance(class="form-control", placeholder="Ville") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.sexe.label(class="form-label") }}
+                            {{ form.sexe(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.nationalite.label(class="form-label") }}
+                            {{ form.nationalite(class="form-control") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.photo_identite.label(class="form-label") }}
+                            {{ form.photo_identite(class="form-control") }}
+                            <small class="text-muted">Formats acceptes : JPG, PNG, GIF, WebP</small>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="eleve@email.com (optionnel)") }}
+                            {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.telephone.label(class="form-label") }}
+                            {{ form.telephone(class="form-control") }}
+                        </div>
+                        {% if not student %}
+                        <div class="col-md-6">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", placeholder="Defaut: EduSchool2026") }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2 : Scolarite -->
+            <div class="card mb-3" data-step-section="2">
+                <div class="card-header">
+                    <h5 class="mb-0"><span class="badge bg-primary me-2">2</span> Scolarite</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.academic_year_id.label(class="form-label") }}
+                            {{ form.academic_year_id(class="form-select" + (" is-invalid" if form.academic_year_id.errors else "")) }}
+                            {% if form.academic_year_id.errors %}<div class="invalid-feedback">{{ form.academic_year_id.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.class_id.label(class="form-label") }}
+                            {{ form.class_id(class="form-select" + (" is-invalid" if form.class_id.errors else "")) }}
+                            {% if form.class_id.errors %}<div class="invalid-feedback">{{ form.class_id.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-2">
+                                {{ form.matricule_auto(class="form-check-input", id="matricule_auto_check") }}
+                                {{ form.matricule_auto.label(class="form-check-label") }}
+                            </div>
+                            <div id="matricule_manual" style="margin-top: 8px;">
+                                {{ form.matricule.label(class="form-label") }}
+                                {{ form.matricule(class="form-control" + (" is-invalid" if form.matricule.errors else ""), placeholder="Ex: ET1-0001") }}
+                                {% if form.matricule.errors %}<div class="invalid-feedback">{{ form.matricule.errors[0] }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                {{ form.boursier(class="form-check-input", id="boursier_check") }}
+                                {{ form.boursier.label(class="form-check-label") }}
+                            </div>
+                            <div id="bourse_desc" style="margin-top: 8px;">
+                                {{ form.bourse_description.label(class="form-label") }}
+                                {{ form.bourse_description(class="form-control", placeholder="Type de bourse") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION : Documents administratifs -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Documents administratifs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.acte_naissance_file.label(class="form-label") }}
+                            {{ form.acte_naissance_file(class="form-control") }}
+                            {% if student and student.student_profile and student.student_profile.acte_naissance %}
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Document existant</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.certificat_medical_file.label(class="form-label") }}
+                            {{ form.certificat_medical_file(class="form-control") }}
+                            {% if student and student.student_profile and student.student_profile.certificat_medical %}
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Document existant</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.bulletin_precedent_file.label(class="form-label") }}
+                            {{ form.bulletin_precedent_file(class="form-control") }}
+                            {% if student and student.student_profile and student.student_profile.bulletin_precedent %}
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Document existant</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3 : Sante -->
+            <div class="card mb-3" data-step-section="3">
+                <div class="card-header">
+                    <h5 class="mb-0"><span class="badge bg-primary me-2">3</span> Sante</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.groupe_sanguin.label(class="form-label") }}
+                            {{ form.groupe_sanguin(class="form-select") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.personne_urgence.label(class="form-label") }}
+                            {{ form.personne_urgence(class="form-control") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.telephone_urgence.label(class="form-label") }}
+                            {{ form.telephone_urgence(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.allergies.label(class="form-label") }}
+                            {{ form.allergies(class="form-control", rows="2") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.traitements.label(class="form-label") }}
+                            {{ form.traitements(class="form-control", rows="2") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.observations_medicales.label(class="form-label") }}
+                            {{ form.observations_medicales(class="form-control", rows="2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4 : Parent (optionnel, pliable) -->
+            <div class="card mb-3" data-step-section="4">
+                <div class="card-header d-flex justify-content-between align-items-center" role="button" data-bs-toggle="collapse" data-bs-target="#parentSection" aria-expanded="false">
+                    <h5 class="mb-0"><span class="badge bg-primary me-2">4</span> Parent <small class="text-muted">(optionnel)</small></h5>
+                    <i class="bi bi-chevron-down" id="parentChevron"></i>
+                </div>
+                <div class="collapse" id="parentSection">
+                    <div class="card-body border-top">
+                        <div class="form-check mb-3">
+                            {{ form.create_parent(class="form-check-input", id="create_parent_check") }}
+                            {{ form.create_parent.label(class="form-check-label fw-bold") }}
+                            <small class="text-muted d-block">Cree automatiquement un compte parent et l'associe a l'eleve.</small>
+                        </div>
+                        <div id="parent_fields" style="display:none;">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    {{ form.parent_prenom.label(class="form-label") }}
+                                    {{ form.parent_prenom(class="form-control", placeholder="Prenom du parent") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.parent_nom.label(class="form-label") }}
+                                    {{ form.parent_nom(class="form-control", placeholder="Nom du parent") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.parent_email.label(class="form-label") }}
+                                    {{ form.parent_email(class="form-control", placeholder="parent@email.com") }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.parent_telephone.label(class="form-label") }}
+                                    {{ form.parent_telephone(class="form-control", placeholder="+243...") }}
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">Si l'email existe deja, le parent sera simplement associe.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('students.list', school_id=school_id) }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Auto matricule toggle
+    var autoCheck = document.getElementById('matricule_auto_check');
+    var manualDiv = document.getElementById('matricule_manual');
+    if (autoCheck && manualDiv) {
+        function toggleMatricule() {
+            manualDiv.style.display = autoCheck.checked ? 'none' : 'block';
+        }
+        autoCheck.addEventListener('change', toggleMatricule);
+        toggleMatricule();
+    }
+
+    // Create parent toggle
+    var parentCheck = document.getElementById('create_parent_check');
+    var parentFields = document.getElementById('parent_fields');
+    var parentSection = document.getElementById('parentSection');
+    if (parentCheck && parentFields) {
+        function toggleParent() {
+            if (parentCheck.checked) {
+                parentFields.style.display = 'block';
+                if (parentSection) {
+                    // Expand the collapse
+                    var bsCollapse = bootstrap.Collapse.getInstance(parentSection);
+                    if (!bsCollapse) bsCollapse = new bootstrap.Collapse(parentSection, {toggle: false});
+                    bsCollapse.show();
+                }
+            } else {
+                parentFields.style.display = 'none';
+            }
+        }
+        parentCheck.addEventListener('change', toggleParent);
+        // Also expand parent section when toggled
+        if (parentSection) {
+            parentSection.addEventListener('shown.bs.collapse', function() {
+                document.getElementById('parentChevron').classList.add('bi-chevron-up');
+                document.getElementById('parentChevron').classList.remove('bi-chevron-down');
+            });
+            parentSection.addEventListener('hidden.bs.collapse', function() {
+                document.getElementById('parentChevron').classList.add('bi-chevron-down');
+                document.getElementById('parentChevron').classList.remove('bi-chevron-up');
+            });
+        }
+        toggleParent();
+    }
+
+    // Step indicator scroll tracking
+    var stepItems = document.querySelectorAll('.step-item');
+    var stepSections = document.querySelectorAll('[data-step-section]');
+    if (stepItems.length && stepSections.length) {
+        window.addEventListener('scroll', function() {
+            var scrollPos = window.scrollY + 200;
+            var activeStep = 1;
+            stepSections.forEach(function(section) {
+                var top = section.getBoundingClientRect().top + window.scrollY;
+                if (scrollPos >= top) {
+                    activeStep = parseInt(section.getAttribute('data-step-section'));
+                }
+            });
+            stepItems.forEach(function(item) {
+                var step = parseInt(item.getAttribute('data-step'));
+                item.classList.remove('active', 'completed');
+                if (step < activeStep) item.classList.add('completed');
+                if (step === activeStep) item.classList.add('active');
+            });
+            // Update connectors
+            document.querySelectorAll('.step-connector').forEach(function(conn, i) {
+                if (i + 1 < activeStep) conn.classList.add('completed');
+                else conn.classList.remove('completed');
+            });
+        });
+    }
+})();
+</script>
+{% endblock %}

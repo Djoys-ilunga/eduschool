@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier ' + year.nom if year else 'Nouvelle année scolaire' }} - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + year.nom if year else 'Nouvelle année scolaire' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Informations générales</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Ex: 2026-2027") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.statut.label(class="form-label") }}
+                            {{ form.statut(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.date_debut.label(class="form-label") }}
+                            {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), type="date") }}
+                            {% if form.date_debut.errors %}<div class="invalid-feedback">{{ form.date_debut.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.date_fin.label(class="form-label") }}
+                            {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), type="date") }}
+                            {% if form.date_fin.errors %}<div class="invalid-feedback">{{ form.date_fin.errors[0] }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Trimestres (optionnel)</h5></div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">Définissez les dates de début et fin de chaque trimestre. Laissez vide si non applicable.</p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12"><h6 class="text-primary">1er Trimestre</h6></div>
+                        <div class="col-md-6">
+                            {{ form.t1_debut.label(class="form-label small") }}
+                            {{ form.t1_debut(class="form-control form-control-sm", type="date") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.t1_fin.label(class="form-label small") }}
+                            {{ form.t1_fin(class="form-control form-control-sm", type="date") }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12"><h6 class="text-primary">2ème Trimestre</h6></div>
+                        <div class="col-md-6">
+                            {{ form.t2_debut.label(class="form-label small") }}
+                            {{ form.t2_debut(class="form-control form-control-sm", type="date") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.t2_fin.label(class="form-label small") }}
+                            {{ form.t2_fin(class="form-control form-control-sm", type="date") }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12"><h6 class="text-primary">3ème Trimestre</h6></div>
+                        <div class="col-md-6">
+                            {{ form.t3_debut.label(class="form-label small") }}
+                            {{ form.t3_debut(class="form-control form-control-sm", type="date") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.t3_fin.label(class="form-label small") }}
+                            {{ form.t3_fin(class="form-control form-control-sm", type="date") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('academic.list_years', school_id=school_id) }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Info</h6></div>
+            <div class="card-body small">
+                <p><strong>Active :</strong> L'année est en cours, les inscriptions sont ouvertes.</p>
+                <p><strong>Close :</strong> L'année est terminée mais consultable.</p>
+                <p><strong>Archivée :</strong> L'année est archivée, accès limité.</p>
+                <hr>
+                <p class="mb-0 text-muted">Les trimestres sont facultatifs. Vous pourrez les modifier plus tard.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

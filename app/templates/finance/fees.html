@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Frais scolaires - EduSchool{% endblock %}
+{% block page_title %}Frais scolaires{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+    <form method="GET" class="row g-2">
+        <div class="col-auto"><select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Toutes les classes</option>{% for c in classes %}<option value="{{ c.id }}" {% if class_id==c.id %}selected{% endif %}>{{ c.nom }}</option>{% endfor %}
+        </select></div>
+        <input type="hidden" name="school_id" value="{{ school_id }}">
+    </form>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('finance.create_payment', school_id=school_id) }}" class="btn btn-success btn-sm">
+            <i class="bi bi-cash-stack me-1"></i> Enregistrer un paiement
+        </a>
+        <a href="{{ url_for('finance.create_fee', school_id=school_id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Definir un frais
+        </a>
+    </div>
+</div>
+<div class="card"><div class="card-body p-0">
+    {% if fees %}
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0"><thead class="table-light"><tr><th>Type</th><th>Classe</th><th>Montant</th><th>Echeance</th><th class="text-center">Payer</th><th></th></tr></thead>
+        <tbody>
+            {% for f in fees %}
+            <tr>
+                <td><strong>{{ f.fee_type.nom }}</strong></td><td>{{ f.classe.nom }}</td>
+                <td><strong>{{ f.montant|int|default(0)|string }} {{ f.devise }}</strong></td>
+                <td>{{ f.echeance.strftime('%d/%m/%Y') if f.echeance else '--' }}</td>
+                <td class="text-center">
+                    <a href="{{ url_for('finance.create_payment', school_id=school_id, fee_id=f.id, class_id=f.class_id) }}"
+                       class="btn btn-outline-success btn-sm" title="Enregistrer un paiement pour ce frais">
+                        <i class="bi bi-cash me-1"></i> Payer
+                    </a>
+                </td>
+                <td><form method="POST" action="{{ url_for('finance.delete_fee', fee_id=f.id, school_id=school_id) }}" class="d-inline"><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form></td>
+            </tr>
+            {% endfor %}
+        </tbody></table>
+    </div>
+    {% else %}<div class="text-center py-4 text-muted">Aucun frais defini.</div>{% endif %}
+</div></div>
+{% endblock %}

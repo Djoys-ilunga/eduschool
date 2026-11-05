@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Journal d'audit - EduSchool{% endblock %}
+{% block page_title %}Journal d'audit{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-lock me-2"></i>100 dernières actions</span>
+        <small class="text-muted">Réservé Super Admin</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>Table</th>
+                        <th>ID Enreg.</th>
+                        <th>Détails</th>
+                        <th>Adresse IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if logs %}
+                        {% for log in logs %}
+                        <tr>
+                            <td class="small text-nowrap">{{ log.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                {% if log.user %}
+                                    {{ log.user.nom_complet }}
+                                    <span class="badge bg-secondary">{{ log.user.role }}</span>
+                                {% else %}
+                                    <span class="text-muted">Système / Anonyme</span>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ log.action }}</code></td>
+                            <td>{{ log.table_name or '-' }}</td>
+                            <td>{{ log.record_id or '-' }}</td>
+                            <td class="small">{{ log.details or '-' }}</td>
+                            <td class="small text-muted"><code>{{ log.ip_address }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                Aucune entrée dans le journal d'audit.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer text-muted small">
+        <i class="bi bi-info-circle me-1"></i> Les 100 entrées les plus récentes sont affichées.
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Modifier association - EduSchool{% endblock %}
+{% block page_title %}Modifier : {{ cs.subject.nom }} — {{ classe.nom }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Paramètres de l'association</h5></div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            {{ form.coefficient.label(class="form-label") }}
+                            {{ form.coefficient(class="form-control" + (" is-invalid" if form.coefficient.errors else "")) }}
+                            {% if form.coefficient.errors %}<div class="invalid-feedback">{{ form.coefficient.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-6">
+                            {{ form.heures_par_semaine.label(class="form-label") }}
+                            {{ form.heures_par_semaine(class="form-control", placeholder="Ex: 4") }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.teacher_id.label(class="form-label") }}
+                        {{ form.teacher_id(class="form-select") }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.groupe.label(class="form-label") }}
+                        {{ form.groupe(class="form-control") }}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('academic.class_subjects', class_id=cs.class_id) }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Résumé</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Classe</dt>
+                    <dd class="col-sm-8 fw-bold">{{ classe.nom }}</dd>
+                    <dt class="col-sm-4">Matière</dt>
+                    <dd class="col-sm-8">{{ cs.subject.nom }}</dd>
+                    <dt class="col-sm-4">Coefficient</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">{{ cs.coefficient }}</span></dd>
+                    <dt class="col-sm-4">Heures/sem</dt>
+                    <dd class="col-sm-8">{{ cs.heures_par_semaine|int if cs.heures_par_semaine else '-' }}</dd>
+                    <dt class="col-sm-4">Enseignant</dt>
+                    <dd class="col-sm-8">{{ cs.teacher.nom_complet if cs.teacher else '-' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

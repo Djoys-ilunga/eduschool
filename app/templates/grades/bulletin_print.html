@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin {{ classe.nom }} - T{{ trimestre }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 10px; margin: 15mm; color: #000; }
+        h2 { text-align: center; margin-bottom: 2px; }
+        h4 { text-align: center; margin-bottom: 8px; color: #333; }
+        table { width: 100%; border-collapse: collapse; font-size: 9px; margin-bottom: 15px; }
+        th { background-color: #f0f0f0; border: 1px solid #999; padding: 4px 3px; text-align: center; font-weight: bold; }
+        td { border: 1px solid #ccc; padding: 3px; text-align: center; vertical-align: middle; }
+        td.name { text-align: left; font-weight: bold; }
+        .header-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 10px; }
+        .header-info div { padding: 4px 8px; background: #f8f8f8; border: 1px solid #ddd; }
+        .mg-header { background-color: #fff3cd !important; }
+        .decision-admis { color: #198754; font-weight: bold; }
+        .decision-reprise { color: #fd7e14; font-weight: bold; }
+        .decision-redouble { color: #dc3545; font-weight: bold; }
+        .decision-exclu { color: #000; font-weight: bold; }
+        .summary { font-size: 10px; margin-bottom: 12px; }
+        .summary span { margin-right: 18px; }
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <h2>BULLETIN TRIMESTRIEL</h2>
+    <h4>{{ classe.school.nom }}</h4>
+    <div class="header-info">
+        <div>Classe : <strong>{{ classe.nom }}</strong></div>
+        <div>Trimestre : <strong>{{ trimestre }}e{% if trimestre==1 %}r{% endif %}</strong></div>
+        <div>Année : <strong>{{ classe.annee_scolaire.nom }}</strong></div>
+        <div>Effectif : <strong>{{ bulletins|length }} élèves</strong></div>
+    </div>
+
+    <div class="summary">
+        {% set admis = bulletins|selectattr('decision','equalto','Admis')|list|length %}
+        {% set repriser = bulletins|selectattr('decision','equalto','A repriser')|list|length %}
+        {% set redouble = bulletins|selectattr('decision','equalto','Redouble')|list|length %}
+        {% set exclu = bulletins|selectattr('decision','equalto','Exclu')|list|length %}
+        <strong>Délibérations :</strong>
+        <span class="decision-admis">✓ {{ admis }} Admis</span>
+        <span class="decision-reprise">⚠ {{ repriser }} À repriser</span>
+        <span class="decision-redouble">✗ {{ redouble }} Redouble</span>
+        <span class="decision-exclu">✗ {{ exclu }} Exclu</span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:22px">#</th>
+                <th style="width:130px">Élève</th>
+                {% for cs in cs_list %}
+                <th>{{ cs.subject.nom[:15] }}<br><small>({{ cs.coefficient }})</small></th>
+                {% endfor %}
+                <th class="mg-header" style="width:40px">Moy.</th>
+                <th style="width:35px">Rang</th>
+                <th style="width:65px">Décision</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bulletins %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td class="name">{{ b.eleve.nom_complet }}</td>
+                {% for m in b.matieres %}
+                <td>{{ m.moyenne|string if m.moyenne is not none else '-' }}</td>
+                {% endfor %}
+                <td class="mg-header"><strong>{{ b.moyenne_generale|string if b.moyenne_generale is not none else '-' }}</strong></td>
+                <td>{{ b.rang|string + '/' + bulletins|length|string if b.rang else '-' }}</td>
+                <td class="decision-{{ 'admis' if b.decision=='Admis' else 'reprise' if 'repriser' in b.decision else 'redouble' if b.decision=='Redouble' else 'exclu' }}">
+                    {{ b.decision }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p style="text-align:right; font-size:8px; color:#999; margin-top:20px;">
+        Généré le {{ now.strftime('%d/%m/%Y %H:%M') }} — EduSchool Platform
+    </p>
+
+    <script>window.print();</script>
+</body>
+</html>

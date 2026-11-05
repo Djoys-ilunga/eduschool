@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier' if edit else 'Nouveau' }} type de frais - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier' if edit else 'Nouveau' }} type de frais{% endblock %}
+{% block content %}
+<div class="col-lg-6 mx-auto">
+    <div class="card"><div class="card-body">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="mb-3">{{ form.nom.label }}{{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else "")) }}{% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}</div>
+            <div class="mb-3">{{ form.description.label }}{{ form.description(class="form-control", rows="3") }}</div>
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('finance.list_fee_types', school_id=school_id) }}" class="btn btn-outline-secondary">Annuler</a>
+        </form>
+    </div></div>
+</div>
+{% endblock %}

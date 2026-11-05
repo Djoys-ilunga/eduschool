@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Types de frais - EduSchool{% endblock %}
+{% block page_title %}Types de frais{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <span class="text-muted">{{ types|length }} type{{ 's' if types|length != 1 }}</span>
+    <a href="{{ url_for('finance.create_fee_type', school_id=school_id) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Nouveau type
+    </a>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        {% if types %}
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light"><tr><th>Nom</th><th>Description</th><th>Statut</th><th></th></tr></thead>
+                <tbody>
+                    {% for t in types %}
+                    <tr>
+                        <td class="fw-semibold">{{ t.nom }}</td>
+                        <td><small class="text-muted">{{ t.description or '--' }}</small></td>
+                        <td><span class="badge bg-{{ 'success' if t.actif else 'secondary' }}">{{ 'Actif' if t.actif else 'Inactif' }}</span></td>
+                        <td>
+                            <a href="{{ url_for('finance.edit_fee_type', type_id=t.id, school_id=school_id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('finance.toggle_fee_type', type_id=t.id, school_id=school_id) }}" class="d-inline">
+                                <button class="btn btn-sm btn-outline-{{ 'warning' if t.actif else 'success' }}">{{ 'Desactiver' if t.actif else 'Activer' }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">Aucun type de frais defini.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

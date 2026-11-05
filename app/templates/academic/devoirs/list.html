@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Devoirs - EduSchool{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-journal-check me-2"></i>Devoirs</h4>
+        <a href="{{ url_for('academic.devoirs_create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nouveau devoir
+        </a>
+    </div>
+
+    <!-- Filtre par classe -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label class="form-label mb-0 small">Année</label>
+                    <select name="year_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        {% for y in all_years %}
+                        <option value="{{ y.id }}" {% if year_filter == y.id %}selected{% endif %}>
+                            {{ y.nom }} {% if y.statut == 'active' %}(Active){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label mb-0 small">Classe</label>
+                    <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="0">Toutes les classes</option>
+                        {% for c in classes %}
+                        <option value="{{ c.id }}" {% if class_filter == c.id %}selected{% endif %}>{{ c.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if assignments %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Titre</th>
+                    <th>Classe</th>
+                    <th>Matière</th>
+                    <th>Date limite</th>
+                    <th>Soumissions</th>
+                    <th>Statut</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in assignments %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('academic.devoirs_detail', assignment_id=a.id) }}" class="text-decoration-none fw-medium">
+                            {{ a.titre }}
+                        </a>
+                        {% if a.fichier_joint_nom %}
+                        <br><small class="text-muted"><i class="bi bi-paperclip"></i> {{ a.fichier_joint_nom }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ a.classe.nom }}</td>
+                    <td>{{ a.subject.nom if a.subject else '—' }}</td>
+                    <td>
+                        {% if a.est_en_retard %}
+                        <span class="text-danger">{{ a.date_limite.strftime('%d/%m/%Y %H:%M') }}</span>
+                        {% else %}
+                        {{ a.date_limite.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">{{ a.nombre_soumissions }}</span>
+                        <small class="text-muted">/ {{ a.nombre_eleves_classe }}</small>
+                    </td>
+                    <td>
+                        {% if a.est_en_retard %}
+                        <span class="badge bg-warning">Terminé</span>
+                        {% else %}
+                        <span class="badge bg-success">Actif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('academic.devoirs_detail', assignment_id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('academic.devoirs_download', assignment_id=a.id) }}" class="btn btn-sm btn-outline-secondary" title="Télécharger toutes les soumissions">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% for p in range(1, pagination.pages + 1) %}
+            <li class="page-item {{ 'active' if p == pagination.page }}">
+                <a class="page-link" href="?page={{ p }}&class_id={{ class_filter }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-journal-x text-muted" style="font-size:3rem;"></i>
+        <p class="text-muted mt-2">Aucun devoir pour le moment.</p>
+        <a href="{{ url_for('academic.devoirs_create') }}" class="btn btn-primary">Créer un devoir</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

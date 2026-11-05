@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Historique — EduSchool{% endblock %}
+{% block page_title %}Historique global{% endblock %}
+
+{% block content %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2.5rem;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #dee2e6;
+    border-radius: 4px;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+.timeline-icon {
+    position: absolute;
+    left: -2.1rem;
+    top: 0.15rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #fff;
+    z-index: 1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.timeline-icon.audit { background: #0d6efd; }
+.timeline-icon.grade { background: #198754; }
+.timeline-icon.attendance { background: #ffc107; color: #212529; }
+.timeline-icon.payment { background: #fd7e14; }
+.timeline-icon.announcement { background: #6f42c1; }
+
+.timeline-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    transition: box-shadow 0.15s;
+}
+.timeline-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.timeline-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+.timeline-author {
+    font-weight: 600;
+    color: #212529;
+}
+.timeline-detail {
+    color: #495057;
+    font-size: 0.9rem;
+}
+.time-ago {
+    font-size: 0.8rem;
+    color: #adb5bd;
+    white-space: nowrap;
+}
+
+.filter-bar {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+.filter-bar .btn-check:checked + .btn {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+</style>
+
+{% macro time_ago(dt, now) %}
+    {% set diff = (now - dt).total_seconds() %}
+    {% if diff < 60 %}
+        Il y a {{ diff|int }} sec
+    {% elif diff < 3600 %}
+        Il y a {{ (diff//60)|int }} min
+    {% elif diff < 86400 %}
+        Il y a {{ (diff//3600)|int }} h
+    {% elif diff < 604800 %}
+        Il y a {{ (diff//86400)|int }} j
+    {% else %}
+        {{ dt.strftime('%d/%m/%Y %H:%M') }}
+    {% endif %}
+{% endmacro %}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Activité récente</h5>
+        <div class="btn-group btn-group-sm filter-bar-js" role="group">
+            <input type="checkbox" class="btn-check" id="filter-audit" checked autocomplete="off">
+            <label class="btn btn-outline-secondary btn-sm" for="filter-audit"><i class="bi bi-box-arrow-in-right me-1"></i>Connexions</label>
+
+            <input type="checkbox" class="btn-check" id="filter-grade" checked autocomplete="off">
+            <label class="btn btn-outline-success btn-sm" for="filter-grade"><i class="bi bi-pencil-square me-1"></i>Notes</label>
+
+            <input type="checkbox" class="btn-check" id="filter-attendance" checked autocomplete="off">
+            <label class="btn btn-outline-warning btn-sm" for="filter-attendance"><i class="bi bi-exclamation-triangle me-1"></i>Absences</label>
+
+            <input type="checkbox" class="btn-check" id="filter-payment" checked autocomplete="off">
+            <label class="btn btn-outline-orange btn-sm" for="filter-payment" style="color:#fd7e14;border-color:#fd7e14;"><i class="bi bi-cash-coin me-1"></i>Paiements</label>
+
+            <input type="checkbox" class="btn-check" id="filter-announcement" checked autocomplete="off">
+            <label class="btn btn-outline-purple btn-sm" for="filter-announcement" style="color:#6f42c1;border-color:#6f42c1;"><i class="bi bi-megaphone me-1"></i>Annonces</label>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if entries %}
+        <div class="timeline" id="timeline">
+            {% for e in entries %}
+            <div class="timeline-item" data-type="{{ e.type }}">
+                <div class="timeline-icon {{ e.type }}">
+                    {% if e.type == 'audit' %}<i class="bi bi-box-arrow-in-right"></i>
+                    {% elif e.type == 'grade' %}<i class="bi bi-pencil-square"></i>
+                    {% elif e.type == 'attendance' %}<i class="bi bi-exclamation-triangle"></i>
+                    {% elif e.type == 'payment' %}<i class="bi bi-cash-coin"></i>
+                    {% elif e.type == 'announcement' %}<i class="bi bi-megaphone"></i>
+                    {% endif %}
+                </div>
+                <div class="timeline-card">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap">
+                        <div class="flex-grow-1 me-3">
+                            <span class="time-ago me-2">{{ time_ago(e.date, now) }}</span>
+                            <span class="timeline-author">{{ e.auteur }}</span>
+                            <span class="text-muted">a</span>
+                            <span class="fw-medium">{{ e.description }}</span>
+                        </div>
+                    </div>
+                    {% if e.detail %}
+                    <div class="timeline-detail mt-1">{{ e.detail }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-clock-history display-4 d-block mb-3"></i>
+            <p class="mb-0">Aucune activité enregistrée pour le moment.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+    const filters = ['audit', 'grade', 'attendance', 'payment', 'announcement'];
+    const items = document.querySelectorAll('.timeline-item[data-type]');
+
+    function updateVisibility() {
+        const active = new Set();
+        filters.forEach(f => {
+            const cb = document.getElementById('filter-' + f);
+            if (cb && cb.checked) active.add(f);
+        });
+        items.forEach(el => {
+            el.style.display = active.has(el.dataset.type) ? '' : 'none';
+        });
+    }
+
+    filters.forEach(f => {
+        const cb = document.getElementById('filter-' + f);
+        if (cb) {
+            cb.addEventListener('change', updateVisibility);
+        }
+    });
+
+    // Init
+    updateVisibility();
+})();
+</script>
+{% endblock %}

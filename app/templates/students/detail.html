@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block title %}{{ user.nom_complet }} - EduSchool{% endblock %}
+{% block page_title %}Dossier eleve : {{ user.nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Colonne gauche : infos detaillees -->
+    <div class="col-lg-8">
+        {% if enrollment %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <strong>Inscrit en :</strong> {{ enrollment.classe.nom }}
+                <span class="ms-3"><strong>Annee :</strong> {{ enrollment.annee_scolaire.nom }}</span>
+                <span class="ms-3"><strong>Depuis :</strong> {{ enrollment.date_inscription.strftime('%d/%m/%Y') }}</span>
+            </div>
+            <span class="badge bg-success">{{ enrollment.statut }}</span>
+        </div>
+        {% else %}
+        <div class="alert alert-warning mb-3">Aucune inscription active.</div>
+        {% endif %}
+
+        <!-- Identite -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Identite</h5>
+                {% if current_user.role != 'student' %}
+                <a href="{{ url_for('students.edit', profile_id=profile.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if profile.photo_identite %}
+                <div class="text-center mb-3">
+                    <img src="{{ profile.photo_identite }}" alt="Photo de {{ user.nom_complet }}"
+                         class="rounded img-thumbnail" style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                </div>
+                {% endif %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Nom complet</dt>
+                    <dd class="col-sm-8 fw-bold">{{ user.nom_complet }}</dd>
+                    <dt class="col-sm-4">Matricule</dt>
+                    <dd class="col-sm-8"><code>{{ profile.matricule or 'Non attribue' }}</code></dd>
+                    <dt class="col-sm-4">Date de naissance</dt>
+                    <dd class="col-sm-8">{{ profile.date_naissance.strftime('%d/%m/%Y') if profile.date_naissance else '--' }}
+                        {% if profile.age %}<small class="text-muted">({{ profile.age }} ans)</small>{% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Lieu de naissance</dt>
+                    <dd class="col-sm-8">{{ profile.lieu_naissance or '--' }}</dd>
+                    <dt class="col-sm-4">Sexe</dt>
+                    <dd class="col-sm-8">{{ {'M':'Masculin','F':'Feminin'}.get(profile.sexe, '--') }}</dd>
+                    <dt class="col-sm-4">Nationalite</dt>
+                    <dd class="col-sm-8">{{ profile.nationalite or '--' }}</dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ user.email }}</dd>
+                    <dt class="col-sm-4">Telephone</dt>
+                    <dd class="col-sm-8">{{ user.telephone or '--' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Sante -->
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Sante</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Groupe sanguin</dt>
+                    <dd class="col-sm-8">{{ profile.groupe_sanguin or '--' }}</dd>
+                    <dt class="col-sm-4">Allergies</dt>
+                    <dd class="col-sm-8">{{ profile.allergies or 'Aucune' }}</dd>
+                    <dt class="col-sm-4">Traitements</dt>
+                    <dd class="col-sm-8">{{ profile.traitements or 'Aucun' }}</dd>
+                    <dt class="col-sm-4">Observations</dt>
+                    <dd class="col-sm-8">{{ profile.observations_medicales or '--' }}</dd>
+                    <dt class="col-sm-4">Personne urgence</dt>
+                    <dd class="col-sm-8">{{ profile.personne_urgence or '--' }} {% if profile.telephone_urgence %}({{ profile.telephone_urgence }}){% endif %}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Documents administratifs -->
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-folder2-open me-2"></i>Documents administratifs</h5></div>
+            <div class="card-body">
+                {% set docs = [
+                    ('Acte de naissance', profile.acte_naissance),
+                    ('Certificat medical', profile.certificat_medical),
+                    ('Dernier bulletin', profile.bulletin_precedent),
+                ] %}
+                {% set has_doc = namespace(value=false) %}
+                <div class="list-group list-group-flush">
+                {% for label, path in docs %}
+                    {% if path %}
+                        {% set has_doc.value = true %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                                <strong>{{ label }}</strong>
+                            </div>
+                            <div>
+                                <a href="{{ path }}" class="btn btn-sm btn-outline-primary" target="_blank" download>
+                                    <i class="bi bi-download me-1"></i> Telecharger
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+                {% if not has_doc.value %}
+                <p class="text-muted mb-0">Aucun document administratif charge.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Scolarite -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Scolarite</h5>
+                {% if current_user.role != 'student' %}
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#changeClassModal">
+                    <i class="bi bi-arrow-left-right me-1"></i> Changer de classe
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <dl class="row mb-2">
+                    <dt class="col-sm-4">Boursier</dt>
+                    <dd class="col-sm-8">
+                        {% if profile.boursier %}<span class="badge bg-success">Oui</span> — {{ profile.bourse_description or '' }}{% else %}Non{% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Date inscription</dt>
+                    <dd class="col-sm-8">{{ profile.date_inscription.strftime('%d/%m/%Y') if profile.date_inscription else '--' }}</dd>
+                    <dt class="col-sm-4">Statut</dt>
+                    <dd class="col-sm-8"><span class="badge bg-{{ 'success' if profile.statut == 'inscrit' else 'warning' }}">{{ profile.statut }}</span></dd>
+                </dl>
+
+                <h6 class="mt-3">Historique des inscriptions</h6>
+                {% if profile.inscriptions %}
+                <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead><tr><th>Annee</th><th>Classe</th><th>Date</th><th>Statut</th></tr></thead>
+                    <tbody>
+                        {% for e in profile.inscriptions|sort(attribute='created_at', reverse=True) %}
+                        <tr>
+                            <td>{{ e.annee_scolaire.nom }}</td>
+                            <td>{{ e.classe.nom }}</td>
+                            <td>{{ e.date_inscription.strftime('%d/%m/%Y') if e.date_inscription else '--' }}</td>
+                            <td>
+                                {% if e.statut == 'actif' %}
+                                    <span class="badge bg-success">{{ e.statut }}</span>
+                                {% elif e.statut == 'termine' %}
+                                    <span class="badge bg-secondary">{{ e.statut }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">{{ e.statut }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% else %}
+                <p class="text-muted small">Aucune inscription enregistree.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne droite : parents (masquee pour les eleves) -->
+    {% if current_user.role != 'student' %}
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Parents / Tuteurs</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if profile.parents %}
+                <div class="list-group list-group-flush">
+                    {% for sp in profile.parents %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ sp.parent.nom_complet }}</strong>
+                                <br><small class="text-muted">{{ sp.relation or 'Non precise' }}</small>
+                            </div>
+                            <div>
+                                {% if sp.est_tuteur_principal %}<span class="badge bg-warning">Tuteur principal</span>{% endif %}
+                            </div>
+                        </div>
+                        {% if current_user.role != 'parent' %}
+                        <small>{{ sp.parent.email }} {% if sp.parent.telephone %}| {{ sp.parent.telephone }}{% endif %}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    <p>Aucun parent associe.</p>
+                </div>
+                {% endif %}
+
+                <!-- Toggle acces bulletin parent (admin seulement) -->
+                {% if current_user.role in ('super_admin', 'school_admin') %}
+                <hr>
+                <form method="POST" action="{{ url_for('students.toggle_bulletin_access', profile_id=profile.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-eye me-1"></i> Acces parent aux bulletins</span>
+                        <button type="submit" class="btn btn-sm btn-{{ 'success' if profile.parent_bulletin_access else 'secondary' }}">
+                            {{ 'Active' if profile.parent_bulletin_access else 'Desactive' }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if current_user.role != 'parent' %}
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Actions</h5></div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('students.edit', profile_id=profile.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil me-1"></i> Modifier le dossier
+                    </a>
+                    <a href="{{ url_for('students.attestation', profile_id=profile.id) }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Generer attestation
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Associer un parent (admin seulement) -->
+        <div class="card mt-3">
+            <div class="card-header"><h6 class="mb-0">Associer un parent</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('students.add_parent', profile_id=profile.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="mb-2">
+                        <select name="parent_id" class="form-select form-select-sm" required>
+                            <option value="">-- Choisir un parent --</option>
+                            {% for p in parents_disponibles %}
+                            <option value="{{ p.id }}">{{ p.nom_complet }} ({{ p.email or p.telephone or '-' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <select name="relation" class="form-select form-select-sm">
+                            <option value="pere">Pere</option>
+                            <option value="mere">Mere</option>
+                            <option value="tuteur">Tuteur legal</option>
+                            <option value="oncle">Oncle</option>
+                            <option value="tante">Tante</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-check-inline mb-2">
+                        <input class="form-check-input" type="checkbox" name="est_tuteur_principal" value="y">
+                        <label class="form-check-label small">Tuteur principal</label>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-person-plus me-1"></i> Associer
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('students.list', school_id=user.school_id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Retour aux eleves
+    </a>
+</div>
+
+<!-- Modal Changer de classe -->
+<div class="modal fade" id="changeClassModal" tabindex="-1" aria-labelledby="changeClassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('students.change_class', profile_id=profile.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changeClassModalLabel">Changer de classe</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Ceci desactivera l'inscription active et creera une nouvelle inscription.</p>
+                    <div class="mb-3">
+                        <label for="modal_year_id" class="form-label">Annee scolaire</label>
+                        <select name="academic_year_id" id="modal_year_id" class="form-select" required>
+                            <option value="">-- Choisir --</option>
+                            {% for y in years %}
+                            <option value="{{ y.id }}" {% if enrollment and y.id == enrollment.academic_year_id %}selected{% endif %}>{{ y.nom }} ({{ y.statut }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal_class_id" class="form-label">Nouvelle classe</label>
+                        <select name="class_id" id="modal_class_id" class="form-select" required>
+                            <option value="">-- Choisir --</option>
+                            {% for c in classes %}
+                            <option value="{{ c.id }}">{{ c.nom }} ({{ c.niveau or '-' }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning">Confirmer le changement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

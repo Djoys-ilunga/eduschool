@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier ' + classe.nom if classe else 'Nouvelle classe' }} - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + classe.nom if classe else 'Nouvelle classe' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Informations de la classe</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Ex: 6eme A") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.academic_year_id.label(class="form-label") }}
+                            {{ form.academic_year_id(class="form-select" + (" is-invalid" if form.academic_year_id.errors else "")) }}
+                            {% if form.academic_year_id.errors %}<div class="invalid-feedback">{{ form.academic_year_id.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.niveau.label(class="form-label") }}
+                            {{ form.niveau(class="form-control", list="niveau-suggestions", placeholder="Ex: 6eme, 5eme, Terminale...",
+                                           pattern="[a-zA-Z0-9À-ÿ\s\-]+", title="Lettres, chiffres, espaces et tirets uniquement",
+                                           oninput="this.value = this.value.replace(/[^a-zA-Z0-9À-ÿ\s\-]/g, '')") }}
+                            <datalist id="niveau-suggestions">
+                                <option value="6eme"><option value="5eme"><option value="4eme">
+                                <option value="3eme"><option value="2nde"><option value="1ere">
+                                <option value="Terminale">
+                                <option value="1ere annee"><option value="2eme annee">
+                                <option value="3eme annee"><option value="4eme annee">
+                            </datalist>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.section.label(class="form-label") }}
+                            {{ form.section(class="form-control", placeholder="Ex: Scientifique, Litteraire") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.capacite_max.label(class="form-label") }}
+                            {{ form.capacite_max(class="form-control" + (" is-invalid" if form.capacite_max.errors else ""), placeholder="Ex: 45", type="number") }}
+                            {% if form.capacite_max.errors %}<div class="invalid-feedback">{{ form.capacite_max.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.salle.label(class="form-label") }}
+                            {{ form.salle(class="form-control", placeholder="Ex: B12") }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.titulaire_id.label(class="form-label") }}
+                            {{ form.titulaire_id(class="form-select") }}
+                            <small class="text-muted">Professeur principal</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('academic.list_classes', school_id=school_id) }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Info</h6></div>
+            <div class="card-body small">
+                <p><strong>Nom :</strong> Identifiant unique de la classe (ex: "6ème A").</p>
+                <p><strong>Niveau :</strong> Niveau d'étude (6ème, 5ème, Terminale...).</p>
+                <p><strong>Section :</strong> Section pédagogique si applicable.</p>
+                <p><strong>Titulaire :</strong> Professeur principal responsable de la classe.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

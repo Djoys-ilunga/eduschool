@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ annonce.titre }} - EduSchool{% endblock %}
+{% block page_title %}{{ annonce.titre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .detail-card {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .detail-card .card-header {
+        border-bottom: none;
+    }
+    .detail-content {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        color: #333;
+    }
+    .meta-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+    }
+    @media (max-width: 576px) {
+        .detail-content {
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="col-lg-10 mx-auto">
+    <div class="card detail-card shadow-sm
+        {% if annonce.priorite == 'urgente' %}border-danger
+        {% elif annonce.priorite == 'importante' %}border-warning
+        {% endif %}">
+        <div class="card-header
+            {% if annonce.priorite == 'urgente' %}bg-danger text-white
+            {% elif annonce.priorite == 'importante' %}bg-warning
+            {% else %}bg-light{% endif %}">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <span class="me-2">
+                        {% if annonce.priorite == 'urgente' %}🔴
+                        {% elif annonce.priorite == 'importante' %}🟠
+                        {% else %}🔵{% endif %}
+                    </span>
+                    <span class="fw-semibold">{{ annonce.priorite|capitalize }}</span>
+                </div>
+                <div>
+                    {% if annonce.is_global %}
+                        <span class="badge bg-info text-dark">🌍 Toute l'école</span>
+                    {% elif annonce.target_user_ids_list %}
+                        <span class="badge bg-primary">👤 Personnel spécifique</span>
+                    {% elif annonce.target_roles_list %}
+                        <span class="badge bg-secondary">👥 Rôle spécifique</span>
+                    {% else %}
+                        <span class="badge bg-success">🏫 Classe(s) spécifique(s)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Métadonnées -->
+            <div class="d-flex flex-wrap gap-3 mb-4 pb-3 border-bottom">
+                <span class="meta-item text-muted">
+                    <i class="bi bi-calendar3"></i>
+                    {{ annonce.created_at|date_fr('%A %d %B %Y à %H:%M') }}
+                </span>
+                <span class="meta-item text-muted">
+                    <i class="bi bi-person"></i>
+                    Publié par <strong>{{ annonce.author.nom_complet }}</strong>
+                </span>
+            </div>
+
+            <!-- Contenu -->
+            <div class="detail-content">
+                {{ annonce.contenu|replace('\n', '<br>')|safe }}
+            </div>
+
+            {% if annonce.fichier_joint %}
+            <!-- Piece jointe -->
+            <div class="mt-4 p-3 bg-light rounded border">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-paperclip fs-5 text-primary"></i>
+                    <div>
+                        <strong>Piece jointe:</strong>
+                        <span class="text-muted ms-2">{{ annonce.fichier_joint_nom }}</span>
+                    </div>
+                    <a href="{{ url_for('communication.download_annonce_file', annonce_id=annonce.id) }}"
+                       class="btn btn-primary btn-sm ms-auto">
+                        <i class="bi bi-download me-1"></i> Télécharger
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-footer bg-transparent">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <a href="{{ url_for('communication.list_annonces', school_id=school_id) }}"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Toutes les annonces
+                </a>
+                {% if current_user.is_super_admin or current_user.role == 'school_admin' %}
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('communication.edit_annonce', annonce_id=annonce.id, school_id=school_id) }}"
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i> Modifier
+                    </a>
+                    <form method="POST" action="{{ url_for('communication.delete_annonce', annonce_id=annonce.id, school_id=school_id) }}"
+                          onsubmit="return confirm('Supprimer cette annonce ?');">
+                        <button class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i> Supprimer
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

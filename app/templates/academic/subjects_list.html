@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Matières - EduSchool{% endblock %}
+{% block page_title %}Matières{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small">Recherche</label>
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Nom de la matière..." value="{{ q or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Catégorie</label>
+                <select name="categorie" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Toutes</option>
+                    <option value="scientifique" {% if filtre_cat == 'scientifique' %}selected{% endif %}>Scientifique</option>
+                    <option value="litteraire" {% if filtre_cat == 'litteraire' %}selected{% endif %}>Littéraire</option>
+                    <option value="technique" {% if filtre_cat == 'technique' %}selected{% endif %}>Technique</option>
+                    <option value="langue" {% if filtre_cat == 'langue' %}selected{% endif %}>Langue</option>
+                    <option value="sport" {% if filtre_cat == 'sport' %}selected{% endif %}>Sport</option>
+                    <option value="artistique" {% if filtre_cat == 'artistique' %}selected{% endif %}>Artistique</option>
+                    <option value="autre" {% if filtre_cat == 'autre' %}selected{% endif %}>Autre</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">Filtrer</button>
+                <a href="{{ url_for('academic.list_subjects', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            {% if q %}{{ subjects|length }} résultat(s) pour '{{ q }}'{% else %}{{ subjects|length }} matière{{ 's' if subjects|length != 1 }}{% endif %}
+        </h5>
+        <a href="{{ url_for('academic.create_subject', school_id=school_id) }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nouvelle matière
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if subjects %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Code</th>
+                        <th>Catégorie</th>
+                        <th>Classes</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in subjects %}
+                    <tr>
+                        <td class="fw-semibold">{{ s.nom }}</td>
+                        <td><code>{{ s.code or '-' }}</code></td>
+                        <td>
+                            {% if s.categorie %}
+                            <span class="badge bg-info">{{ s.categorie }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.classes_associees|length }}</td>
+                        <td>
+                            {% if s.actif %}
+                            <span class="badge bg-success">Actif</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('academic.edit_subject', subject_id=s.id) }}" class="btn btn-outline-secondary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('academic.delete_subject', subject_id=s.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger"
+                                            data-confirm="Supprimer la matière {{ s.nom }} ?"
+                                            title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-book display-3 d-block mb-3"></i>
+            <p>Aucune matière.</p>
+            <a href="{{ url_for('academic.create_subject', school_id=school_id) }}" class="btn btn-primary">
+                Créer la première matière
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{{ url_for('academic.list_classes', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Classes
+    </a>
+</div>
+{% endblock %}

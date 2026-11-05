@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Centre d'Export — EduSchool{% endblock %}
+
+{% block extra_head %}
+<style>
+    .export-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+        overflow: hidden;
+    }
+    .export-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .export-card .card-header {
+        border-bottom: none;
+        padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+    }
+    .export-card .card-body {
+        padding: 0.75rem 1.25rem 1.25rem 1.25rem;
+    }
+    .export-card .card-footer {
+        background: transparent;
+        border-top: 1px solid #f0f0f0;
+        padding: 1rem 1.25rem;
+    }
+    .export-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 0.75rem;
+    }
+    .icon-students { background: #e8f5e9; color: #2e7d32; }
+    .icon-grades { background: #e3f2fd; color: #1565c0; }
+    .icon-bulletins { background: #fff3e0; color: #e65100; }
+    .icon-payments { background: #fce4ec; color: #c62828; }
+    .btn-export {
+        border-radius: 8px;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+    }
+    .filter-select {
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+    {# Breadcrumbs #}
+    {% include "components/breadcrumbs.html" %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1 fw-bold">📤 Centre d'Export</h3>
+            <p class="text-muted mb-0">Téléchargez vos données en Excel avec les filtres souhaités.</p>
+        </div>
+        {% if active_year %}
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            📅 {{ active_year.nom }}
+        </span>
+        {% endif %}
+    </div>
+
+    {# Row 1: Élèves + Notes #}
+    <div class="row g-4 mb-4">
+        {# CARD 1: Export Élèves #}
+        <div class="col-lg-6">
+            <div class="card export-card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="export-icon icon-students">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h5 class="card-title mb-1">📋 Export Élèves</h5>
+                    <p class="text-muted small mb-0">Liste d'effectifs : matricule, identité, classe, contact parent.</p>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('academic.export_students') }}" target="_blank">
+                        <input type="hidden" name="school_id" value="{{ school_id }}">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Classe</label>
+                                <select name="class_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Toutes les classes —</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Année scolaire</label>
+                                <select name="year_id" class="form-select form-select-sm filter-select">
+                                    {% for y in years %}
+                                    <option value="{{ y.id }}" {% if y.id == year_id %}selected{% endif %}>{{ y.nom }} ({{ y.statut }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success btn-export w-100">
+                                <i class="bi bi-download me-1"></i> Télécharger Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# CARD 2: Export Notes #}
+        <div class="col-lg-6">
+            <div class="card export-card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="export-icon icon-grades">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h5 class="card-title mb-1">📊 Export Notes</h5>
+                    <p class="text-muted small mb-0">Relevé détaillé : toutes les notes avec matière, période et date.</p>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('academic.export_grades') }}" target="_blank">
+                        <input type="hidden" name="school_id" value="{{ school_id }}">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Classe</label>
+                                <select name="class_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Toutes —</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Matière</label>
+                                <select name="subject_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Toutes —</option>
+                                    {% for s in subjects %}
+                                    <option value="{{ s.id }}">{{ s.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Période</label>
+                                <select name="period_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Toutes —</option>
+                                    {% for t in trimesters %}
+                                    <optgroup label="{{ t.nom }}">
+                                        {% for p in t.periodes %}
+                                        <option value="{{ p.id }}">{{ p.nom }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success btn-export w-100">
+                                <i class="bi bi-download me-1"></i> Télécharger Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Row 2: Bulletins + Paiements #}
+    <div class="row g-4">
+        {# CARD 3: Export Bulletins #}
+        <div class="col-lg-6">
+            <div class="card export-card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="export-icon icon-bulletins">
+                        <i class="bi bi-journal-check"></i>
+                    </div>
+                    <h5 class="card-title mb-1">📈 Export Bulletins</h5>
+                    <p class="text-muted small mb-0">Synthèse par classe : moyenne générale, rang et décision.</p>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('academic.export_bulletins') }}" target="_blank">
+                        <input type="hidden" name="school_id" value="{{ school_id }}">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Classe <span class="text-danger">*</span></label>
+                                <select name="class_id" class="form-select form-select-sm filter-select" required>
+                                    <option value="">— Sélectionnez —</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Trimestre</label>
+                                <select name="trimester_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Tous —</option>
+                                    {% for t in trimesters %}
+                                    <option value="{{ t.id }}">{{ t.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success btn-export w-100">
+                                <i class="bi bi-download me-1"></i> Télécharger Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# CARD 4: Export Paiements #}
+        <div class="col-lg-6">
+            <div class="card export-card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="export-icon icon-payments">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <h5 class="card-title mb-1">💰 Export Paiements</h5>
+                    <p class="text-muted small mb-0">État financier : montants dus, payés, restes et statuts.</p>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('finance.export_payments') }}" target="_blank">
+                        <input type="hidden" name="school_id" value="{{ school_id }}">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Classe</label>
+                                <select name="class_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Toutes —</option>
+                                    {% for c in classes %}
+                                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Type de frais</label>
+                                <select name="fee_type_id" class="form-select form-select-sm filter-select">
+                                    <option value="">— Tous —</option>
+                                    {% for ft in fee_types %}
+                                    <option value="{{ ft.id }}">{{ ft.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Statut</label>
+                                <select name="statut" class="form-select form-select-sm filter-select">
+                                    <option value="">— Tous —</option>
+                                    <option value="paye">✅ Payé</option>
+                                    <option value="non_paye">❌ Non payé</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success btn-export w-100">
+                                <i class="bi bi-download me-1"></i> Télécharger Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

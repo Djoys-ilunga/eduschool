@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Élève - EduSchool{% endblock %}
+{% block page_title %}Tableau de bord — Élève{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-primary mb-0">
+                    <i class="bi bi-person"></i>
+                </h1>
+                <small class="text-muted">{{ current_user.nom_complet }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-success mb-0">
+                    {{ enrollment.classe.nom if enrollment else '--' }}
+                </h1>
+                <small class="text-muted">Classe</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-info mb-0">
+                    {{ profile.matricule or '--' }}
+                </h1>
+                <small class="text-muted">Matricule</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if profile %}
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-person me-1"></i>
+                    {{ profile.user.nom_complet }}
+                </h6>
+                <span class="badge bg-light text-dark">Élève</span>
+            </div>
+            <div class="card-body">
+                <dl class="row small mb-2">
+                    <dt class="col-sm-4">Matricule</dt>
+                    <dd class="col-sm-8"><code>{{ profile.matricule or '--' }}</code></dd>
+                    <dt class="col-sm-4">École</dt>
+                    <dd class="col-sm-8">{{ profile.user.school.nom if profile.user.school else '--' }}</dd>
+                    {% if enrollment %}
+                    <dt class="col-sm-4">Classe</dt>
+                    <dd class="col-sm-8"><span class="badge bg-info">{{ enrollment.classe.nom }}</span></dd>
+                    <dt class="col-sm-4">Année</dt>
+                    <dd class="col-sm-8">{{ enrollment.annee_scolaire.nom }}</dd>
+                    {% else %}
+                    <dt class="col-sm-4">Statut</dt>
+                    <dd class="col-sm-8"><span class="badge bg-warning">Non inscrit</span></dd>
+                    {% endif %}
+                </dl>
+                <div class="d-grid gap-1">
+                    <a href="{{ url_for('students.detail', profile_id=profile.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-person me-1"></i> Ma fiche
+                    </a>
+                    {% if enrollment %}
+                    <a href="{{ url_for('academic.releve', school_id=current_user.school_id) }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-journal-text me-1"></i> Mes notes
+                    </a>
+                    <a href="{{ url_for('students.attestation', profile_id=profile.id) }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Attestation scolaire
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Aucun profil etudiant n'est associe a votre compte. Contactez l'administration de l'ecole.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Administration - {{ school.nom if school }}{% endblock %}
+{% block page_title %}{{ school.nom if school else 'Administration' }}{% endblock %}
+
+{% block content %}
+<!-- Année scolaire active -->
+{% if annee_active %}
+<div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <strong>Année scolaire active :</strong> {{ annee_active.nom }}
+        <small class="ms-2">({{ annee_active.date_debut.strftime('%d/%m/%Y') }} → {{ annee_active.date_fin.strftime('%d/%m/%Y') }})</small>
+    </div>
+    <a href="{{ url_for('academic.list_years', school_id=school.id) }}" class="btn btn-sm btn-outline-primary">Gérer</a>
+</div>
+{% else %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center mb-3">
+    <div><strong>Aucune année scolaire active.</strong> Créez-en une pour commencer.</div>
+    <a href="{{ url_for('academic.create_year', school_id=school.id) }}" class="btn btn-sm btn-warning">Créer</a>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">Élèves</h6>
+                <h2 class="mb-0">{{ stats.total_eleves }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">Enseignants</h6>
+                <h2 class="mb-0">{{ stats.total_enseignants }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">Classes</h6>
+                <h2 class="mb-0">{{ stats.total_classes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-secondary border-start border-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">Matières</h6>
+                <h2 class="mb-0">{{ stats.total_matieres }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-warning border-start border-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-1">Parents</h6>
+                <h2 class="mb-0">{{ stats.total_parents }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Effectifs par classe</h5></div>
+            <div class="card-body">
+                <canvas id="effectifsChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Répartition garçons/filles</h5></div>
+            <div class="card-body">
+                <canvas id="sexeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Actions rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('academic.list_years', school_id=school.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar3 me-1"></i> Années scolaires
+                    </a>
+                    <a href="{{ url_for('academic.list_classes', school_id=school.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-diagram-3 me-1"></i> Classes
+                    </a>
+                    <a href="{{ url_for('users.list') }}" class="btn btn-outline-success">
+                        <i class="bi bi-people me-1"></i> Utilisateurs
+                    </a>
+                    <a href="{{ url_for('students.list', school_id=school.id) }}" class="btn btn-outline-info">
+                        <i class="bi bi-mortarboard me-1"></i> Inscriptions
+                    </a>
+                    <a href="{{ url_for('academic.bulletins', school_id=school.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-file-earmark-text me-1"></i> Notes & Bulletins
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Classes récentes</h5>
+                <a href="{{ url_for('academic.create_class', school_id=school.id) }}" class="btn btn-sm btn-primary">+ Nouvelle</a>
+            </div>
+            <div class="card-body p-0">
+                {% if classes_recentes %}
+                <div class="list-group list-group-flush">
+                    {% for c in classes_recentes %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ c.nom }}</strong>
+                            <small class="text-muted ms-2">{{ c.niveau or '' }} {{ c.section or '' }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-light text-dark me-2">{{ c.matieres|length }} mat.</span>
+                            <a href="{{ url_for('academic.class_subjects', class_id=c.id) }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-book"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    <a href="{{ url_for('academic.create_class', school_id=school.id) }}">Créer la première classe</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Informations école</h5></div>
+            <div class="card-body">
+                {% if school %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Code</dt>
+                    <dd class="col-sm-8"><code>{{ school.code }}</code></dd>
+                    <dt class="col-sm-4">Ville</dt>
+                    <dd class="col-sm-8">{{ school.ville or '-' }}</dd>
+                    <dt class="col-sm-4">Devise</dt>
+                    <dd class="col-sm-8">{{ school.devise }}</dd>
+                    <dt class="col-sm-4">Plan</dt>
+                    <dd class="col-sm-8">{{ school.plan.nom if school.plan else 'Gratuit' }}</dd>
+                </dl>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Effectifs par classe
+    var ctx1 = document.getElementById('effectifsChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: {{ classes_labels|tojson }},
+            datasets: [{
+                label: 'Élèves',
+                data: {{ classes_effectifs|tojson }},
+                backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Repartition garcons/filles
+    var ctx2 = document.getElementById('sexeChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: {{ repartition_sexe.labels|tojson }},
+            datasets: [{
+                data: {{ repartition_sexe.data|tojson }},
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.8)',
+                    'rgba(214, 51, 132, 0.8)',
+                    'rgba(108, 117, 125, 0.5)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

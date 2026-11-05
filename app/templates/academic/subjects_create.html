@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Modifier ' + subject.nom if subject else 'Nouvelle matière' }} - EduSchool{% endblock %}
+{% block page_title %}{{ 'Modifier ' + subject.nom if subject else 'Nouvelle matière' }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Informations</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), placeholder="Ex: Mathematiques") }}
+                            {% if form.nom.errors %}<div class="invalid-feedback">{{ form.nom.errors[0] }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-5">
+                            {{ form.code.label(class="form-label") }}
+                            {{ form.code(class="form-control", placeholder="Ex: MATH") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.categorie.label(class="form-label") }}
+                            {{ form.categorie(class="form-select") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.actif.label(class="form-label") }}
+                            {{ form.actif(class="form-select") }}
+                        </div>
+                        <div class="col-12">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3", placeholder="Description de la matiere...") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('academic.list_subjects', school_id=school_id) }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Info</h6></div>
+            <div class="card-body small">
+                <p><strong>Nom :</strong> Nom complet de la discipline.</p>
+                <p><strong>Code :</strong> Abréviation (3-5 lettres) pour les bulletins.</p>
+                <p><strong>Catégorie :</strong> Regroupement thématique pour les rapports.</p>
+                <p class="mb-0 text-muted">Les matières inactives n'apparaîtront pas dans les nouvelles associations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

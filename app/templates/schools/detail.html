@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}{{ ecole.nom }} - EduSchool{% endblock %}
+{% block page_title %}{{ ecole.nom }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .school-header {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête école -->
+<div class="school-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4 class="mb-1">{{ ecole.nom }}</h4>
+        <div class="opacity-75 small">
+            <span class="me-3"><i class="bi bi-geo-alt me-1"></i>{{ ecole.ville or '—' }}, {{ ecole.pays }}</span>
+            <span class="me-3"><i class="bi bi-tag me-1"></i>{{ ecole.code }}</span>
+            <span class="me-3"><i class="bi bi-building me-1"></i>{{ ecole.type_ecole or 'Non spécifié' }}</span>
+            <span><i class="bi bi-currency-dollar me-1"></i>{{ ecole.devise }}</span>
+        </div>
+    </div>
+    <div>
+        {% if ecole.statut == 'active' %}
+            <span class="badge bg-success fs-6">Active</span>
+        {% elif ecole.statut == 'suspendue' %}
+            <span class="badge bg-danger fs-6">Suspendue</span>
+        {% else %}
+            <span class="badge bg-secondary fs-6">{{ ecole.statut }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Stats -->
+    <div class="col-md-3">
+        <div class="card border-primary border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-primary mb-0">{{ ecole.nombre_eleves }}</h1>
+                <small class="text-muted">Élèves</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-success mb-0">{{ ecole.nombre_enseignants }}</h1>
+                <small class="text-muted">Enseignants</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-info mb-0">{{ ecole.nombre_classes }}</h1>
+                <small class="text-muted">Classes</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning border-start border-4 h-100">
+            <div class="card-body text-center">
+                <h1 class="text-warning mb-0">{{ '⭐' if ecole.plan else '—' }}</h1>
+                <small class="text-muted">Plan {{ ecole.plan.nom if ecole.plan else '—' }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informations -->
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Informations</h5>
+                <a href="{{ url_for('schools.edit', school_id=ecole.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Adresse</dt>
+                    <dd class="col-sm-8">{{ ecole.adresse or '—' }}</dd>
+
+                    <dt class="col-sm-4">Ville</dt>
+                    <dd class="col-sm-8">{{ ecole.ville or '—' }}</dd>
+
+                    <dt class="col-sm-4">Pays</dt>
+                    <dd class="col-sm-8">{{ ecole.pays }}</dd>
+
+                    <dt class="col-sm-4">Téléphone</dt>
+                    <dd class="col-sm-8">{{ ecole.telephone or '—' }}</dd>
+
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ ecole.email or '—' }}</dd>
+
+                    <dt class="col-sm-4">Site web</dt>
+                    <dd class="col-sm-8">
+                        {% if ecole.site_web %}
+                        <a href="{{ ecole.site_web }}" target="_blank">{{ ecole.site_web }}</a>
+                        {% else %}—{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Devise</dt>
+                    <dd class="col-sm-8">{{ ecole.devise }}</dd>
+
+                    <dt class="col-sm-4">Langue</dt>
+                    <dd class="col-sm-8">{{ ecole.langue }}</dd>
+
+                    <dt class="col-sm-4">Fuseau horaire</dt>
+                    <dd class="col-sm-8">{{ ecole.fuseau_horaire }}</dd>
+
+                    <dt class="col-sm-4">Créée le</dt>
+                    <dd class="col-sm-8">{{ ecole.created_at.strftime('%d/%m/%Y à %H:%M') }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Abonnement + Actions -->
+    <div class="col-md-5">
+        <!-- Abonnement -->
+        {% if subscription %}
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Abonnement</h5></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-bold fs-5">{{ subscription.plan.nom }}</span>
+                    <span class="badge bg-{{ 'success' if subscription.est_active else 'danger' }}">
+                        {{ 'Actif' if subscription.est_active else 'Inactif' }}
+                    </span>
+                </div>
+                <p class="small text-muted mb-2">
+                    {{ subscription.plan.prix|int }} {{ subscription.plan.devise }}/mois
+                </p>
+                <p class="small mb-1">Max {{ subscription.plan.max_eleves }} élèves</p>
+                <p class="small mb-1">Max {{ subscription.plan.max_enseignants }} enseignants</p>
+                <p class="small">Fonctionnalités {{ 'limitées' if subscription.plan.feature_limitees else 'complètes' }}</p>
+                <hr>
+                <small class="text-muted">
+                    Depuis le {{ subscription.date_debut.strftime('%d/%m/%Y') }}
+                    {% if subscription.date_fin %}
+                    — Expire le {{ subscription.date_fin.strftime('%d/%m/%Y') }}
+                    {% else %}
+                    — Renouvellement automatique
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions Super Admin -->
+        {% if current_user.is_super_admin %}
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Actions</h5></div>
+            <div class="card-body">
+                {% if ecole.statut == 'active' %}
+                <form method="POST" action="{{ url_for('schools.suspend', school_id=ecole.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-warning w-100"
+                            data-confirm="Suspendre cette école ? Les utilisateurs ne pourront plus se connecter.">
+                        <i class="bi bi-pause-circle me-1"></i> Suspendre l'école
+                    </button>
+                </form>
+                {% elif ecole.statut == 'suspendue' %}
+                <form method="POST" action="{{ url_for('schools.activate', school_id=ecole.id) }}" class="mb-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-play-circle me-1"></i> Réactiver l'école
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bouton retour -->
+<a href="javascript:history.back()" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Retour
+</a>
+{% endblock %}

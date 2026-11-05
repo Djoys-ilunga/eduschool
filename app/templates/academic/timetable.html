@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Emploi du temps - EduSchool{% endblock %}
+{% block page_title %}Emploi du temps{% endblock %}
+
+{% block content %}
+{% if current_user.role in ('super_admin', 'school_admin', 'teacher') %}
+<!-- Filtres (admin/prof seulement) -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small">Annee</label>
+                <select name="year_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for y in years %}
+                    <option value="{{ y.id }}" {% if year_id == y.id %}selected{% endif %}>{{ y.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Classe</label>
+                <select name="class_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Toutes</option>
+                    {% for cl in classes %}
+                    <option value="{{ cl.id }}" {% if class_id == cl.id %}selected{% endif %}>{{ cl.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Enseignant</label>
+                <select name="teacher_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Tous</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if teacher_id == t.id %}selected{% endif %}>{{ t.nom_complet }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('academic.view_timetable', school_id=school_id) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+            {% if current_user.role in ('super_admin', 'school_admin') %}
+            <div class="col-md-2">
+                <a href="{{ url_for('academic.manage_timetable', school_id=school_id) }}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-gear me-1"></i> Gerer
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Grille emploi du temps -->
+{% if grille %}
+<div class="table-responsive">
+    <table class="table table-bordered table-sm">
+        <thead class="table-primary">
+            <tr>
+                <th style="width:100px">Heure</th>
+                {% for jour in jours %}
+                <th class="text-center text-capitalize">{{ jour }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for hd, hf in creneaux_list %}
+            <tr>
+                <td class="fw-bold small">{{ hd }} - {{ hf }}</td>
+                {% for jour in jours %}
+                <td class="text-center align-middle p-1">
+                    {% set entry = grille[jour].get((hd, hf)) %}
+                    {% if entry %}
+                    <div class="rounded p-1 small" style="background-color:#e8f5e9; min-height:40px">
+                        <strong>{{ entry.subject.nom if entry.subject else '?' }}</strong><br>
+                        <span class="text-muted">{{ entry.teacher.nom_complet if entry.teacher else '?' }}</span><br>
+                        <small class="text-muted">{{ entry.classe.nom if entry.classe else '' }}</small>
+                        {% if entry.salle %}<br><small>Salle {{ entry.salle }}</small>{% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-calendar-x" style="font-size:3rem"></i>
+    <p class="mt-2">Aucun creneau horaire defini.</p>
+    {% if current_user.role in ('super_admin', 'school_admin') %}
+    <a href="{{ url_for('academic.manage_timetable', school_id=school_id) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i> Creer l'emploi du temps
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

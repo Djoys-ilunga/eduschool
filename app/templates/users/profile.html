@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Mon profil - EduSchool{% endblock %}
+{% block page_title %}Mon profil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Infos personnelles -->
+    <div class="col-lg-7">
+        <!-- Avatar -->
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Photo de profil</h5></div>
+            <div class="card-body">
+                <div class="text-center">
+                    {% if current_user.photo %}
+                    <img src="{{ current_user.photo }}" alt="Avatar"
+                         class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 150px; height: 150px;">
+                        <i class="bi bi-person" style="font-size: 4rem; color: #adb5bd;"></i>
+                    </div>
+                    {% endif %}
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('users.profile') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="mb-2">
+                            <input type="file" name="avatar" accept="image/*" class="form-control form-control-sm">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-upload me-1"></i> {{ 'Changer la photo' if current_user.photo else 'Ajouter une photo' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><h5 class="mb-0">Informations personnelles</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Nom complet</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ current_user.nom_complet }}</dd>
+
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ current_user.email }}</dd>
+
+                    <dt class="col-sm-4">Rôle</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-primary fs-6">{{ current_user.role }}</span>
+                    </dd>
+
+                    <dt class="col-sm-4">Téléphone</dt>
+                    <dd class="col-sm-8">{{ current_user.telephone or '—' }}</dd>
+
+                    <dt class="col-sm-4">Adresse</dt>
+                    <dd class="col-sm-8">{{ current_user.adresse or '—' }}</dd>
+
+                    <dt class="col-sm-4">École</dt>
+                    <dd class="col-sm-8">
+                        {% if current_user.school %}
+                            <a href="{{ url_for('schools.detail', school_id=current_user.school.id) }}">
+                                {{ current_user.school.nom }}
+                            </a>
+                        {% else %}—{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Dernière connexion</dt>
+                    <dd class="col-sm-8">
+                        {{ current_user.derniere_connexion.strftime('%d/%m/%Y à %H:%M') if current_user.derniere_connexion else '—' }}
+                    </dd>
+
+                    <dt class="col-sm-4">Compte créé le</dt>
+                    <dd class="col-sm-8">{{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Changement mot de passe -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Changer le mot de passe</h5></div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.current_password.label(class="form-label") }}
+                        {{ form.current_password(class="form-control" + (" is-invalid" if form.current_password.errors else "")) }}
+                        {% if form.current_password.errors %}<div class="invalid-feedback">{{ form.current_password.errors[0] }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.new_password.label(class="form-label") }}
+                        {{ form.new_password(class="form-control" + (" is-invalid" if form.new_password.errors else "")) }}
+                        {% if form.new_password.errors %}<div class="invalid-feedback">{{ form.new_password.errors[0] }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.confirm_password.label(class="form-label") }}
+                        {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else "")) }}
+                        {% if form.confirm_password.errors %}<div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>{% endif %}
+                    </div>
+
+                    {{ form.submit(class="btn btn-warning w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
